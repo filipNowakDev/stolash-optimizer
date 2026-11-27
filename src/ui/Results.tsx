@@ -4,6 +4,7 @@ import type { SkippedRow } from '../core/parse';
 import { canDouble } from '../core/order';
 import type { Settings } from '../core/types';
 import { t, type Locale } from '../i18n';
+import { BoardView } from './BoardView';
 import { downloadCsv, downloadXlsx, toTsv } from './export';
 import { formatNumber } from './format';
 import { StripView } from './StripView';
@@ -28,16 +29,40 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
   const skippedCount = skipped.length + tooThin.length;
   const firstOfGroup = new Set<string>();
 
-  const strips = (withPieceList: boolean) =>
-    result.strips.map((strip, i) => (
-      <StripView
-        key={i}
-        locale={locale}
-        settings={settings}
-        strip={strip}
-        withPieceList={withPieceList}
-      />
-    ));
+  const cutMap = () => (
+    <>
+      <h3 className="pt-2 font-semibold">
+        {t(locale, 'boards.title', { n: result.boards.length })}
+      </h3>
+      <p className="text-sm">{t(locale, 'boards.note')}</p>
+      <p className="text-sm">
+        <span aria-hidden="true">﹏﹏ </span>
+        {t(locale, 'boards.edgeBanding')}
+      </p>
+      {result.boards.map((board, i) => (
+        <BoardView
+          key={i}
+          locale={locale}
+          settings={settings}
+          board={board}
+          number={i + 1}
+          total={result.boards.length}
+          strips={result.strips}
+        />
+      ))}
+      <h3 className="pt-2 font-semibold">{t(locale, 'preview.title')}</h3>
+      {result.strips.map((strip, i) => (
+        <StripView
+          key={i}
+          locale={locale}
+          settings={settings}
+          strip={strip}
+          number={i + 1}
+          withPieceList
+        />
+      ))}
+    </>
+  );
 
   return (
     <>
@@ -83,7 +108,7 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
                     {t(locale, 'preview.pair')}
                   </label>
                 )}
-                <StripView locale={locale} settings={settings} strip={strip} />
+                <StripView locale={locale} settings={settings} strip={strip} number={i + 1} />
               </div>
             );
           })}
@@ -110,7 +135,7 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
                 <button type="button" className="btn" onClick={() => window.print()}>
                   {t(locale, 'action.print')}
                 </button>
-                {strips(true)}
+                {cutMap()}
               </>
             ) : (
               <TableTab key={tab} id={tab} locale={locale} settings={settings} result={result} />
@@ -122,7 +147,7 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
       {/* The print layout is the cut map only, whichever tab is open. */}
       <div className="hidden print:block">
         <h1 className="text-lg font-semibold">{t(locale, 'tab.map')}</h1>
-        {strips(true)}
+        {cutMap()}
       </div>
     </>
   );

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { FORMATEK_CSV, FORMATEK_TXT, toWindows1250 } from './fixtures';
 import { calculate } from './job';
+import { canDouble } from './order';
 import { decodeFile, parseRows, proposeMap, readTable, suggestGrainLock } from './parse';
 import { FACTORY_SETTINGS } from './settings';
 import type { Edge, Part, Settings } from './types';
@@ -57,7 +58,9 @@ describe('acceptance', () => {
     });
     expect(run([part(720, ['left', 'top'])]).exceptions[0]!.reason).toBe('adjacentEdges');
     expect(run([part(720, ['left', 'right', 'top'])]).exceptions[0]!.reason).toBe('finishedPart');
-    expect(run([part(720, [])])).toMatchObject({ strips: [], unbanded: [{ length: 720 }] });
+    const bare = run([part(720, [])]);
+    expect(bare.unbanded).toMatchObject([{ length: 720 }]);
+    expect(bare.strips).toMatchObject([{ stripWidth: 560, edgeL1: undefined }]);
   });
 
   it('5: allows banding across the grain only with grain lock off', () => {
@@ -95,6 +98,21 @@ describe('acceptance', () => {
     expect(skipped).toEqual([expect.objectContaining({ row: 2, reason: 'badQuantity' })]);
   });
 
+  it('keeps unbanded and banded parts of one width on separate strips', () => {
+    // 560.8 banded orders at 560, the same width as the bare part.
+    const { strips } = run([part(500, [], { name: '' }), part(500, ['left'], { width: 560.8 })]);
+    expect(strips.map((s) => [s.stripWidth, s.edgeL1])).toEqual([
+      [560, undefined],
+      [560, PCV.label],
+    ]);
+  });
+
+  it('never offers to double a narrow unbanded strip', () => {
+    const narrow = part(2000, [], { width: 50, quantity: 2 });
+    const [strip] = run([narrow]).strips;
+    expect(canDouble(strip!, settings)).toBe(false);
+  });
+
   it('8: pairs narrow full strips and leaves the odd one single', () => {
     const narrow = part(2000, ['left'], { width: 50.8, quantity: 3 });
     const plain = run([narrow]);
@@ -111,17 +129,15 @@ describe('acceptance', () => {
     const grain = Object.fromEntries(parts.map((p) => [p.material, true]));
     const result = run(parts, grain);
 
-    expect(result.rows).toEqual([
-      {
-        quantity: 4,
-        length: 2760,
-        width: 599.2,
-        thickness: 18,
-        material: '',
-        edgeL1: null,
-        edgeL2: undefined,
-        flags: [],
-      },
+    expect(
+      result.rows.map((r) => [r.quantity, r.length, r.width, r.thickness, r.edgeL1]),
+    ).toEqual([
+      [1, 613.2, 650, 18, undefined],
+      [1, 2760, 614, 18, undefined],
+      [2, 2760, 282, 18, undefined],
+      [4, 2760, 599.2, 18, null],
+      [1, 25, 15, 1024, undefined],
+      [1, 25, 15, 1264, undefined],
     ]);
     const reasons = result.exceptions.map((e) => [e.part.name.split(' ')[0], e.reason]);
     expect(reasons).toEqual([

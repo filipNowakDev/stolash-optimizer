@@ -1,0 +1,63 @@
+// Shared marks of the cutting schematics.
+
+const PERIOD = 24;
+const DEPTH = 11;
+
+/** The wavy line that marks a banded edge, drawn from (0, y) to (length, y). */
+export function Banding({ length, y }: { length: number; y: number }) {
+  const waves = Math.max(1, Math.round(length / PERIOD));
+  const step = length / waves;
+  const path = `M0 ${y}` + ` q${step / 4} ${-DEPTH} ${step / 2} 0 t${step / 2} 0`.repeat(waves);
+  return <path d={path} fill="none" stroke="#111827" strokeWidth="3" />;
+}
+
+export function Hatch({ id }: { id: string }) {
+  return (
+    <pattern id={id} width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="30" height="30" fill="#fff" />
+      <line y2="30" stroke="#9ca3af" strokeWidth="4" />
+    </pattern>
+  );
+}
+
+interface PieceProps {
+  x: number;
+  /** Drawn size. The length runs along the strip. */
+  length: number;
+  height: number;
+  name: string;
+  /** Formatted dimensions. */
+  lengthText: string;
+  widthText: string;
+  /** Number of banded long edges: L1 is drawn at the bottom, L2 at the top. */
+  banded: 0 | 1 | 2;
+}
+
+/** A part: length on top with its edge mark, width on the left, name bottom right. */
+export function Piece({ x, length, height, name, lengthText, widthText, banded }: PieceProps) {
+  const font = Math.min(52, height / 3.4, length / 4.5);
+  const mark = ['', '-', '='][banded];
+  return (
+    <svg x={x} width={length} height={height}>
+      <title>{`${name} ${lengthText} × ${widthText}`.trim()}</title>
+      <rect width="100%" height="100%" fill={banded ? '#d9ead3' : '#d6deef'} stroke="#111827" strokeWidth="5" />
+      {banded > 0 && <Banding length={length} y={height - 14} />}
+      {banded === 2 && <Banding length={length} y={14} />}
+      {/* Below this the text is unreadable; the title and piece list still have it. */}
+      {font >= 22 && (
+        <g fontSize={font} fill="#111827">
+          <text x={length / 2} y={font + 20} textAnchor="middle">
+            {lengthText}
+            {mark}
+          </text>
+          <text x="14" y={height / 2 + font / 3}>
+            {widthText}
+          </text>
+          <text x={length - 14} y={height - 26} textAnchor="end">
+            {name}
+          </text>
+        </g>
+      )}
+    </svg>
+  );
+}

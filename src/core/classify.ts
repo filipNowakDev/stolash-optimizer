@@ -5,7 +5,24 @@ import type { Candidate, Edge, Part, PartException, ReasonId, Settings } from '.
 export interface Classification {
   candidates: Candidate[];
   exceptions: PartException[];
+  /** Listed for the "No banding" tab; those that fit the board are candidates too. */
   unbanded: Part[];
+}
+
+/** No edge fixes the orientation, so the length stays along the strip. */
+function classifyUnbanded(part: Part, settings: Settings): Candidate | ReasonId {
+  const boardWidth = round(part.width, settings.orderDecimals);
+  if (boardWidth <= 0) return 'nonPositiveWidth';
+  if (boardWidth > settings.maxWidth) return 'widthExceedsBoard';
+  return {
+    part,
+    pieceLength: part.length,
+    boardWidth,
+    edgeL1: undefined,
+    edgeL2: undefined,
+    edgeThickness: 0,
+    acrossGrain: false,
+  };
 }
 
 function classifyPart(part: Part, settings: Settings, grainLock: boolean): Candidate | ReasonId {
@@ -55,11 +72,11 @@ export function classify(
 ): Classification {
   const result: Classification = { candidates: [], exceptions: [], unbanded: [] };
   for (const part of parts) {
-    if (Object.keys(part.edges).length === 0) {
-      result.unbanded.push(part);
-      continue;
-    }
-    const outcome = classifyPart(part, settings, grainLock[part.material] ?? true);
+    const bare = Object.keys(part.edges).length === 0;
+    if (bare) result.unbanded.push(part);
+    const outcome = bare
+      ? classifyUnbanded(part, settings)
+      : classifyPart(part, settings, grainLock[part.material] ?? true);
     if (typeof outcome === 'string') result.exceptions.push({ part, reason: outcome });
     else result.candidates.push(outcome);
   }

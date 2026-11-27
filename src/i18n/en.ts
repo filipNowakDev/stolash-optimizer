@@ -78,11 +78,20 @@ export const en = {
   'preview.offcut': 'offcut',
   'preview.notProven': 'The job is large: this layout is good but not proven optimal.',
 
+  'strip.number': 'Strip {n}',
+  'boards.title': 'Boards: {n}',
+  'boards.board': 'Board {n} of {total}',
+  'boards.edgeBanding': 'edge banding',
+  'boards.waste': 'Waste',
+  'boards.cuts': 'Cuts',
+  'boards.note':
+    'How the strips can be ripped from whole boards. Strip numbers match the drawings below.',
+
   'tab.order': 'Strip order',
   'tab.finished': 'Finished parts',
   'tab.unbanded': 'No banding',
   'tab.map': 'Cut map',
-  'unbanded.note': 'These parts have no banding. This version does not pack them.',
+  'unbanded.note': 'These parts have no banding. They are cut from unbanded strips.',
   'results.empty': 'Nothing here.',
   'results.skipped': 'Skipped rows: {n}',
   'results.row': 'Row {n}',

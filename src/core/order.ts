@@ -8,7 +8,7 @@ export interface OrderRow {
   width: number;
   thickness: number | null;
   material: string;
-  edgeL1: EdgeLabel;
+  edgeL1: EdgeLabel | undefined;
   edgeL2: EdgeLabel | undefined;
   flags: StripFlag[];
 }
@@ -17,6 +17,7 @@ export interface OrderRow {
 export function canDouble(strip: Strip, settings: Settings): boolean {
   return (
     strip.flags.includes('narrow') &&
+    strip.edgeL1 !== undefined &&
     strip.edgeL2 === undefined &&
     2 * strip.stripWidth + settings.sawKerf <= settings.maxWidth
   );

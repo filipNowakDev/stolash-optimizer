@@ -1,4 +1,5 @@
 // The whole calculation from parsed parts to result lists. Pure.
+import { layoutBoards } from './boards';
 import { classify } from './classify';
 import { applyDoubling, collapseExceptions, collapseParts, orderRows } from './order';
 import { pack } from './pack';
@@ -16,6 +17,7 @@ export function calculate(
   return {
     strips,
     rows: orderRows(strips, settings),
+    boards: layoutBoards(strips, settings),
     exceptions: collapseExceptions([...classified.exceptions, ...packed.exceptions]),
     unbanded: collapseParts(classified.unbanded),
     proven: packed.proven,

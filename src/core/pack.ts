@@ -13,7 +13,8 @@ export function groupKey(c: Candidate): string {
   return JSON.stringify([
     c.part.material,
     c.part.thickness,
-    c.edgeL1,
+    // false is "no edge"; null is already the default label.
+    c.edgeL1 === undefined ? false : c.edgeL1,
     c.edgeL2 === undefined ? false : c.edgeL2,
     c.boardWidth,
     c.edgeThickness,

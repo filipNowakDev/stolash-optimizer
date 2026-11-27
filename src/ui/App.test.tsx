@@ -32,6 +32,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load pasted text' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm and calculate' }));
     expect(screen.getByRole('cell', { name: '599.2' })).toBeTruthy();
+    expect(screen.getByRole('cell', { name: '614' })).toBeTruthy();
 
     unmount();
     render(<App store={store} />);
@@ -39,7 +40,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Polski' }));
     expect(screen.getByRole('cell', { name: '599,2' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Okleina L1' })).toBeTruthy();
-    expect(screen.getByRole('cell', { name: 'Obrzeże 0,8 mm' })).toBeTruthy();
+    expect(screen.getAllByRole('cell', { name: 'Obrzeże 0,8 mm' })).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Wyczyść sesję' }));

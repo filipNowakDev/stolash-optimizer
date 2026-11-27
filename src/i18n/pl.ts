@@ -80,11 +80,20 @@ export const pl: Record<MessageId, string> = {
   'preview.offcut': 'odpad',
   'preview.notProven': 'Duże zlecenie: układ jest dobry, ale nie udowodniono, że optymalny.',
 
+  'strip.number': 'Pas {n}',
+  'boards.title': 'Płyty: {n}',
+  'boards.board': 'Płyta {n} z {total}',
+  'boards.edgeBanding': 'okleina',
+  'boards.waste': 'Odpad',
+  'boards.cuts': 'Cięcia',
+  'boards.note':
+    'Jak można rozkroić całe płyty na pasy. Numery pasów odpowiadają rysunkom poniżej.',
+
   'tab.order': 'Zamówienie pasów',
   'tab.finished': 'Gotowe formatki',
   'tab.unbanded': 'Bez okleiny',
   'tab.map': 'Mapa cięcia',
-  'unbanded.note': 'Te elementy nie mają okleiny. Ta wersja ich nie układa.',
+  'unbanded.note': 'Te elementy nie mają okleiny. Są cięte z pasów bez okleiny.',
   'results.empty': 'Brak pozycji.',
   'results.skipped': 'Pominięte wiersze: {n}',
   'results.row': 'Wiersz {n}',

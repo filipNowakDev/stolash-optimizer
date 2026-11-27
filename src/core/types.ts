@@ -57,8 +57,9 @@ export interface Candidate {
   pieceLength: number;
   /** Rounded to orderDecimals. */
   boardWidth: number;
-  edgeL1: EdgeLabel;
-  /** undefined when only L1 is banded. */
+  /** undefined for an unbanded strip. */
+  edgeL1: EdgeLabel | undefined;
+  /** undefined when at most L1 is banded. */
   edgeL2: EdgeLabel | undefined;
   edgeThickness: number;
   acrossGrain: boolean;
@@ -78,7 +79,7 @@ export interface Strip {
   groupKey: string;
   material: string;
   thickness: number | null;
-  edgeL1: EdgeLabel;
+  edgeL1: EdgeLabel | undefined;
   edgeL2: EdgeLabel | undefined;
   stripWidth: number;
   orderLength: number;

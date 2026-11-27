@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 1.5 |
+| Document version | 1.7 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -64,7 +64,7 @@ Acceptance at delivery: the scenarios in section 17 produce the numbers in this 
 - Accounts, project sync, Supabase (section 16).
 - A library of many saved jobs in the cloud.
 - Pricing, stock, and sending the order to the wholesaler.
-- 2D nesting of whole sheets. This app packs along the strip only.
+- 2D nesting of parts on whole sheets. Parts are packed along strips, and whole strips are then laid out on boards (section 13).
 - A PRO100 plugin or automatic report download.
 - A third UI language.
 
@@ -265,7 +265,7 @@ With grain lock on for the blank material and 0.8 mm edge included in the dimens
 - **Boki szafy po lewej** — L1. Piece length 2390, `boardWidth` 599.2, thickness 18, quantity 4. Each piece occupies its own strip (`2390 + 3.2 + 2390 > 2750`). Fill 2390 / 2750 ≥ 0.40, so four order rows of 2760 × 599.2, or one aggregated row with quantity 4.
 - **Wieńce** and **Półki** — exception `crossGrain`. The only band is on the width, across the grain.
 - **Drzwi Szafy** — exception `finishedPart` (four edges).
-- Unnamed rows and **koło** — "No banding". v1 does not treat `koło` as a circle; it is a 15 × 15 row with no marks.
+- Unnamed rows and **koło** — unbanded strips, also listed in "No banding". v1 does not treat `koło` as a circle; it is a 15 × 15 row with no marks.
 
 Turning grain lock off for the blank material moves wieńce and półki into `acrossGrain` strips. Piece length is the width column (1024 or 1264). `boardWidth` comes from the length column minus 0.8 (599.2 for wieńce, 589.2 for półki). The two cabinets stay in different groups because 1024 and 1264 differ.
 
@@ -375,7 +375,7 @@ A left or right edge is parallel to the grain. A top or bottom edge is perpendic
 
 | Banded edges | Grain lock | Result |
 |---|---|---|
-| none | either | "No banding" tab. v1 does not pack these |
+| none | either | Unbanded strip. Piece length = `length`, strip width = `width`, nothing subtracted. Also listed in the "No banding" tab |
 | one: left or right | either | L1 strip. Piece length = `length`, strip width from `width` |
 | one: top or bottom | off | L1 strip across the nominal length. Piece length = `width`, strip width from `length`. Flag `acrossGrain` |
 | one: top or bottom | on | Exception `crossGrain` |
@@ -387,6 +387,8 @@ A left or right edge is parallel to the grain. A top or bottom edge is perpendic
 | differing edge labels | either | Exception `mixedEdgeProducts` |
 
 A 90° rotation does not move banding onto a different physical edge. One banded edge fixes the strip orientation. Grain lock off only allows a strip whose length is not the PRO100 length column.
+
+Unbanded strips have no L1 or L2, never share a strip with banded parts, and cannot be paired into a double strip. A part wider than `maxWidth` or longer than `maxLength` is an exception like any other.
 
 Packing group key:
 
@@ -453,6 +455,10 @@ and the group is not already L1+L2 from two edges of the part. After the user tu
 
 The cut map still lists each narrow strip and adds the note for `doubledStrip`: rip the double blank lengthwise first. Turning the action off restores the single-width order. The choice is stored in the session per group key.
 
+### Strips on whole boards
+
+Strips of one material and board thickness share boards of `maxLength` × `maxWidth`. A board is ripped along its length into lanes, with `sawKerf` between them. Strips of equal width may sit end to end in one lane, again with a kerf between them. A doubled pair is one blank of width `2 * boardWidth + sawKerf`. The layout uses as few lanes per width, and then as few boards, as the packing search finds. It is a drawing aid: it does not change the strip order.
+
 ## 14. Views
 
 One page. Layout aimed at a wide shop monitor. A narrow window may scroll tables horizontally. Tailwind CSS, compiled at build time. No separate visual system.
@@ -469,7 +475,7 @@ The fields from section 8, with mm beside each length. An invalid value does not
 
 ### Preview
 
-Each strip is an SVG scaled to `orderLength`. Part rectangles show a truncated name, with the full name in `title`. The offcut sits at the end. Above the drawing: material, width, order length, L1, L2, flags. Below: the cut sequence, for example `720 + kerf 3.2 + 564` in English and `720 + rzaz 3,2 + 564` in Polish.
+Each strip is a numbered SVG drawn on the board length, so lengths and widths compare by eye. A very narrow strip is drawn taller than scale. Part rectangles show the name and size, with both in `title`. Banded edges are drawn as a colored line, L1 at the bottom and L2 at the top. The offcut sits at the end. Above the drawing: material, width, order length, L1, L2, flags. Below: the cut sequence, for example `720 + kerf 3.2 + 564` in English and `720 + rzaz 3,2 + 564` in Polish.
 
 ### Tab "Strip order"
 
@@ -496,11 +502,11 @@ Exceptions and their reason ids, rendered in the active language. Columns: name,
 
 ### Tab "No banding"
 
-Unbanded parts, quantity collapsed. Short note that v1 does not pack them. Same export. Sheet: `Unbanded` / `Bez okleiny`.
+Unbanded parts, quantity collapsed. Short note that they are cut from unbanded strips. Same export. Sheet: `Unbanded` / `Bez okleiny`.
 
 ### Tab "Cut map"
 
-Every strip, drawing plus piece list. "Print" calls `window.print()`. The print layout is A4 portrait and contains the cut map only. The user saves PDF from the browser print dialog. Printed labels use the active language.
+First every board to scale, with its parts labelled by strip number, length, width and name. A wavy line marks each banded edge, `-` or `=` after the length says one or two, waste is hatched, and a caption gives material, thickness, board number and size, waste share, and cut count with total cut length. Then every strip, drawing plus piece list. "Print" calls `window.print()`. The print layout is A4 portrait and contains the cut map only. The user saves PDF from the browser print dialog. Printed labels use the active language.
 
 ### Session
 
@@ -571,7 +577,7 @@ Dimensions include the edge. Thickness 0.8 mm. `maxLength` 2760. `trimAllowance`
 1. Pieces 2100, 720, 720, and 564 of the same width produce two strips. The first holds 2100 + 3.2 + 564 = 2667.2. The second holds 720 + 3.2 + 720 = 1443.2. Both are ordered at 2760, because 1443.2 / 2750 ≥ 0.40. Order width = part width − 0.8.
 2. A single 800 mm piece produces one strip flagged `short`, ordered at 810.
 3. A 2800 mm piece becomes `longerThanBoard`. It is absent from the strip order.
-4. A side banded on the 720 length, width 560, is a strip with piece length 720. The same part banded on both length edges (left and right) is L1+L2 with `boardWidth` = 560 − 1.6. Banding on the length and the width is `adjacentEdges`. Banding on three or four edges is `finishedPart`. No banding goes to "No banding" and creates no strip.
+4. A side banded on the 720 length, width 560, is a strip with piece length 720. The same part banded on both length edges (left and right) is L1+L2 with `boardWidth` = 560 − 1.6. Banding on the length and the width is `adjacentEdges`. Banding on three or four edges is `finishedPart`. No banding goes to "No banding" and onto an unbanded strip.
 5. With grain lock on, banding only on the top or bottom is `crossGrain`. After grain lock is turned off for that material, the part forms a strip, piece length equals the file width, and the result is flagged `acrossGrain`.
 6. Two widths, two materials, two board thicknesses, or two edge labels do not share a strip.
 7. `gospodarcze - lista formatek.csv` decodes as Windows-1250, shows `Wieńce`, `Półki`, and `koło` correctly, and is recognized as the Lista formatek profile with no header. The tab TXT of the same report parses to the same 12 rows. A bad quantity is on the skipped list, and the other rows still produce a result.
@@ -579,7 +585,7 @@ Dimensions include the edge. Thickness 0.8 mm. `maxLength` 2760. `trimAllowance`
 9. Reload restores parameters, the column map, the last session, and the language. "Clear session" removes the result and keeps parameters and language. The browser network log shows no request carrying the CSV body.
 10. The Polish CSV opens in Excel with Polish characters, semicolons, and comma decimals. The English CSV uses comma delimiters and dot decimals. The printed cut map has no import zone.
 11. On a fresh profile with an English browser language, the UI is English. Choosing **Polski** in the header menu switches every chrome string, tab, remark, and export header without changing strip counts or ordered millimeters. Reload keeps Polish. Imported material names stay as they were in the file. The same coverage holds in the other direction.
-12. On the gospodarcze Lista formatek file, with grain lock left on and the edge included at 0.8 mm: the only strip order is quantity 4 of 2760 × 599.2 × 18, L1 set to the default edge label, material blank. Wieńce and półki are `crossGrain`. Both door rows are `finishedPart`. The unnamed rows and both `koło` rows are unbanded.
+12. On the gospodarcze Lista formatek file, with grain lock left on and the edge included at 0.8 mm: the only banded strip order is quantity 4 of 2760 × 599.2 × 18, L1 set to the default edge label, material blank. The unbanded strip orders, with L1 and L2 empty, are 1 of 613.2 × 650, 1 of 2760 × 614, 2 of 2760 × 282, and 1 of 25 × 15 for each `koło` row. Wieńce and półki are `crossGrain`. Both door rows are `finishedPart`. The unnamed rows and both `koło` rows are listed as unbanded.
 
 ## 18. Open questions
 
