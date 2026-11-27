@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 3.7 |
+| Document version | 3.8 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -489,7 +489,7 @@ When `shortStrips` is off, one more version follows, labelled "short strips": ev
 
 The three goals compare only layouts with the strip lengths as set. All rank fewest boards first. A layout that wins several goals is listed once under all of them, and other different layouts fill the list as alternatives. The first is the default.
 
-A table above the results shows, per version, boards, wholesaler cut meters, shop cut meters, waste, reusable leftover area and the largest leftover. Any column sorts it, best first. The chosen version drives the order, drawings, export and print, and is stored in the session. Waste is board area that ends up in no part, so versions with the same board count differ in how the waste is split rather than in its total.
+A table above the results shows, per version, boards, wholesaler cut meters, banding meters, shop cut meters, waste, reusable leftover area and the largest leftover. Any column sorts it, best first. The chosen version drives the order, drawings, export and print, and is stored in the session. Waste is board area that ends up in no part, so versions with the same board count differ in how the waste is split rather than in its total.
 
 ## 14. Views
 
@@ -561,7 +561,7 @@ First every board to scale, with its parts labelled by strip number, length, wid
 
 ### Who does what
 
-The wholesaler delivers every strip, banded or not, and the elements that come whole (`finishedPart`, `adjacentEdges`, `mixedEdgeProducts`). The shop crosscuts parts from the strips and rips double strips. The cut map starts with those counts, a drawing of each whole element, and a list of anything that is neither (too long, too wide, no width left). Drawings show a blue outline around what is delivered and a red dashed line for each shop cut, and every strip says in words who does what.
+The wholesaler delivers every strip, banded or not, and the elements that come whole (`finishedPart`, `adjacentEdges`, `mixedEdgeProducts`). The shop crosscuts parts from the strips and rips double strips. The cut map starts with those counts, the total edge banding length and its split per edge product between strips and whole elements (a strip counts its whole order length for each banded side; no allowance is added), a drawing of each whole element, and a list of anything that is neither (too long, too wide, no width left). Drawings show a blue outline around what is delivered and a red dashed line for each shop cut, and every strip says in words who does what.
 
 ### Print
 

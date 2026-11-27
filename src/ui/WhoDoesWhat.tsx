@@ -1,11 +1,9 @@
+import { WHOLE_REASONS } from '../core/banding';
 import type { Result } from '../core/job';
-import type { Part, PartException, ReasonId, Settings } from '../core/types';
+import type { Part, PartException, Settings } from '../core/types';
 import { t, type Locale } from '../i18n';
 import { Banding } from './drawing';
-import { formatNumber, materialName } from './format';
-
-/** Exceptions the wholesaler makes whole. The rest cannot be ordered as they are. */
-const WHOLE: ReasonId[] = ['finishedPart', 'adjacentEdges', 'mixedEdgeProducts'];
+import { edgeName, formatNumber, materialName } from './format';
 
 const quantity = (items: PartException[]) => items.reduce((sum, e) => sum + e.part.quantity, 0);
 
@@ -19,8 +17,8 @@ export function WhoDoesWhat({
   settings: Settings;
   result: Result;
 }) {
-  const whole = result.exceptions.filter((e) => WHOLE.includes(e.reason));
-  const rest = result.exceptions.filter((e) => !WHOLE.includes(e.reason));
+  const whole = result.exceptions.filter((e) => WHOLE_REASONS.includes(e.reason));
+  const rest = result.exceptions.filter((e) => !WHOLE_REASONS.includes(e.reason));
   const strips = result.rows.reduce((sum, row) => sum + row.quantity, 0);
   const pieces = result.strips.reduce((sum, strip) => sum + strip.pieces.length, 0);
   const rips = result.strips.filter((s) => s.flags.includes('doubled')).length / 2;
@@ -44,6 +42,27 @@ export function WhoDoesWhat({
       <p>
         <strong>{t(locale, 'who.you')}:</strong> {t(locale, 'who.cut', { pieces, rips })}
       </p>
+      {result.banding.length > 0 && (
+        <div>
+          <p>
+            <strong>{t(locale, 'banding.total')}:</strong>{' '}
+            {formatNumber(locale, result.metrics.banding / 1000, 2)} m
+          </p>
+          <ul className="list-disc pl-5 text-sm">
+            {result.banding.map(({ label, strips, whole }) => (
+              <li key={label ?? ''}>
+                {t(locale, 'banding.product', {
+                  name: edgeName(locale, settings, label),
+                  total: formatNumber(locale, (strips + whole) / 1000, 2),
+                  strips: formatNumber(locale, strips / 1000, 2),
+                  whole: formatNumber(locale, whole / 1000, 2),
+                })}
+              </li>
+            ))}
+          </ul>
+          <p className="muted">{t(locale, 'banding.note')}</p>
+        </div>
+      )}
       {whole.length > 0 && (
         <>
           <h3 className="font-semibold">{t(locale, 'who.whole')}</h3>

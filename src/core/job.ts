@@ -1,4 +1,5 @@
 // The whole calculation from parsed parts to result lists. Pure.
+import { banding } from './banding';
 import { boardStats, layoutBoards, layoutChoices, type Board } from './boards';
 import { classify } from './classify';
 import { packColumns, type Solver } from './columns';
@@ -16,6 +17,8 @@ export interface Metrics {
   boards: number;
   /** Wholesaler cuts, mm. */
   cutLength: number;
+  /** Edge banding on strips and whole elements, mm. */
+  banding: number;
   /** The shop's cuts, mm. */
   ownLength: number;
   /** Board area not ending up in a part, mm². */
@@ -35,6 +38,7 @@ function measureBoards(strips: Strip[], boards: Board[], settings: Settings): Me
   const metrics: Metrics = {
     boards: boards.length,
     cutLength: 0,
+    banding: 0,
     ownLength: 0,
     waste: boards.length * settings.maxLength * settings.maxWidth - parts,
     reusable: 0,
@@ -190,13 +194,25 @@ export function calculateVersions(
     exceptions: collapseExceptions([...classified.exceptions, ...exceptions]),
     unbanded: collapseParts(classified.unbanded),
   });
-  return chosen.map(({ candidate, goals, short }, i) => ({
+  const withBanding = chosen.map((entry) => {
+    const bands = banding(
+      entry.candidate.strips,
+      lists(entry.candidate).exceptions,
+      settings,
+    );
+    const total = bands.reduce((sum, b) => sum + b.strips + b.whole, 0);
+    return { ...entry, bands, total };
+  });
+  return withBanding.map(({ candidate, goals, short, bands, total }, i) => ({
     id: short ? 'short' : goals.length > 0 ? goals.join('+') : `other${i}`,
     number: i + 1,
     goals,
     short,
     ...candidate,
     ...lists(candidate),
+    metrics: { ...candidate.metrics, banding: total },
+    /** Per edge product. */
+    banding: bands,
     /** Least strip area any packing could order, mm²; only HiGHS gives one. */
     areaBound: short ? null : areaBound,
     /** mm of wholesaler cuts over all boards. */
