@@ -63,12 +63,23 @@ describe('acceptance', () => {
     expect(bare.strips).toMatchObject([{ stripWidth: 560, edgeL1: undefined }]);
   });
 
-  it('5: allows banding across the grain only with grain lock off', () => {
+  it('5: bands across the grain on a strip limited to the board width', () => {
     const across = part(720, ['top']);
-    expect(run([across]).exceptions[0]!.reason).toBe('crossGrain');
-    const [strip] = run([across], { Dąb: false }).strips;
-    expect(strip!.pieces[0]!.length).toBe(560);
-    expect(strip!.flags).toContain('acrossGrain');
+    const [locked] = run([across]).strips;
+    expect(locked).toMatchObject({ crossCut: true, orderLength: 570, flags: ['short', 'acrossGrain'] });
+    expect(locked!.pieces[0]!.length).toBe(560);
+
+    // 1200 is full length: 2030 across the grain, 2760 once direction stops mattering.
+    const long = part(720, ['top'], { width: 1200 });
+    expect(run([long]).strips[0]).toMatchObject({ crossCut: true, orderLength: 2030 });
+    expect(run([long], { Dąb: false }).strips[0]).toMatchObject({
+      crossCut: false,
+      orderLength: 2760,
+    });
+
+    const tooLong = part(720, ['top'], { width: 2100 });
+    expect(run([tooLong]).exceptions[0]!.reason).toBe('longerThanBoard');
+    expect(run([tooLong], { Dąb: false }).strips).toHaveLength(1);
   });
 
   it('6: never mixes widths, materials, thicknesses or edge labels', () => {
@@ -124,6 +135,26 @@ describe('acceptance', () => {
     ]);
   });
 
+  it('pairs wide one-edge strips too, to be ripped in half', () => {
+    const wide = part(2000, ['left'], { quantity: 2 });
+    const plain = run([wide]);
+    const { rows } = run([wide], {}, { [plain.strips[0]!.groupKey]: true });
+    expect(rows).toEqual([
+      expect.objectContaining({ quantity: 1, width: 1121.6, edgeL1: PCV.label, edgeL2: PCV.label }),
+    ]);
+  });
+
+  it('puts a wieniec on an ordinary strip once its texture is rotated in PRO100', () => {
+    // PRO100 then swaps the columns, so the band moves to the length.
+    const { parts } = load('Wieniec\t1024\t—\t600\t   \t18\t2\t');
+    expect(run(parts).strips[0]).toMatchObject({
+      crossCut: false,
+      orderLength: 2760,
+      stripWidth: 599.2,
+      flags: [],
+    });
+  });
+
   it('12: produces the expected result for the gospodarcze file', () => {
     const { parts } = load(FORMATEK_CSV);
     const grain = Object.fromEntries(parts.map((p) => [p.material, true]));
@@ -135,16 +166,15 @@ describe('acceptance', () => {
       [1, 613.2, 650, 18, undefined],
       [1, 2760, 614, 18, undefined],
       [2, 2760, 282, 18, undefined],
+      [4, 2030, 599.2, 18, null],
+      [6, 2030, 589.2, 18, null],
       [4, 2760, 599.2, 18, null],
       [1, 25, 15, 1024, undefined],
       [1, 25, 15, 1264, undefined],
     ]);
+    expect(result.rows.slice(3, 5).map((r) => r.flags)).toEqual([['acrossGrain'], ['acrossGrain']]);
     const reasons = result.exceptions.map((e) => [e.part.name.split(' ')[0], e.reason]);
     expect(reasons).toEqual([
-      ['Wieńce', 'crossGrain'],
-      ['Półki', 'crossGrain'],
-      ['Wieńce', 'crossGrain'],
-      ['Półki', 'crossGrain'],
       ['Drzwi', 'finishedPart'],
       ['Drzwi', 'finishedPart'],
     ]);

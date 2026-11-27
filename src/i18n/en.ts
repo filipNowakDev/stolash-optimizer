@@ -125,7 +125,6 @@ export const en = {
   'reason.nonPositiveWidth': 'strip width is zero or less',
   'reason.widthExceedsBoard': 'wider than the board',
   'reason.longerThanBoard': 'longer than the board',
-  'reason.crossGrain': 'banding across the grain',
   'reason.adjacentEdges': 'two adjacent edges',
   'reason.finishedPart': 'order as a finished part',
   'reason.mixedEdgeProducts': 'different edge products',

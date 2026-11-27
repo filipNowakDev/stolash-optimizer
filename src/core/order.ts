@@ -1,5 +1,6 @@
 // Order rows and collapsed part lists (PRD sections 13-14). Pure.
 import { round } from './numbers';
+import { boardSize } from './settings';
 import type { EdgeLabel, Part, PartException, Settings, Strip, StripFlag } from './types';
 
 export interface OrderRow {
@@ -13,13 +14,15 @@ export interface OrderRow {
   flags: StripFlag[];
 }
 
-/** A narrow single-banded group whose doubled blank still fits the sheet. */
+/**
+ * A one-edge strip whose doubled blank still fits the sheet: ordered banded on
+ * both sides and ripped in half in the shop.
+ */
 export function canDouble(strip: Strip, settings: Settings): boolean {
   return (
-    strip.flags.includes('narrow') &&
     strip.edgeL1 !== undefined &&
     strip.edgeL2 === undefined &&
-    2 * strip.stripWidth + settings.sawKerf <= settings.maxWidth
+    2 * strip.stripWidth + settings.sawKerf <= boardSize(settings, strip.crossCut).width
   );
 }
 

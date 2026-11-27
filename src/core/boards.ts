@@ -1,5 +1,6 @@
 // How the strips can be ripped from whole boards. Pure.
 import { binPack } from './binpack';
+import { boardSize } from './settings';
 import type { Settings, Strip } from './types';
 
 export interface PlacedStrip {
@@ -15,6 +16,8 @@ export interface PlacedStrip {
 export interface Board {
   material: string;
   thickness: number | null;
+  /** The strips run across the grain, so the board is seen turned a quarter. */
+  crossCut: boolean;
   strips: PlacedStrip[];
 }
 
@@ -68,29 +71,31 @@ function blanks(strips: Strip[], indexes: number[], sawKerf: number): Blank[] {
 }
 
 /**
- * Strips of one material and thickness share boards. The board is ripped into
- * lanes along its length, and each lane is crosscut where it holds several strips.
+ * Strips of one material, thickness and direction share boards. The board is
+ * ripped into lanes along the strips, and each lane is crosscut where it holds
+ * several strips. Across-grain strips get boards of their own.
  * Takes strips that went through applyDoubling.
  */
 export function layoutBoards(strips: Strip[], settings: Settings): Board[] {
-  const { maxLength, maxWidth, sawKerf } = settings;
+  const { sawKerf } = settings;
   const stocks = new Map<string, number[]>();
   strips.forEach((strip, i) => {
-    const key = JSON.stringify([strip.material, strip.thickness]);
+    const key = JSON.stringify([strip.material, strip.thickness, strip.crossCut]);
     stocks.set(key, [...(stocks.get(key) ?? []), i]);
   });
 
   return [...stocks.values()].flatMap((indexes) => {
-    const { material, thickness } = strips[indexes[0]!]!;
+    const { material, thickness, crossCut } = strips[indexes[0]!]!;
+    const board = boardSize(settings, crossCut);
     const byWidth = new Map<number, Blank[]>();
     for (const blank of blanks(strips, indexes, sawKerf)) {
       byWidth.set(blank.width, [...(byWidth.get(blank.width) ?? []), blank]);
     }
     const lanes: Lane[] = [...byWidth].flatMap(([width, same]) =>
-      fit(same, (b) => b.length, maxLength, sawKerf).map((group) => ({ width, blanks: group })),
+      fit(same, (b) => b.length, board.length, sawKerf).map((group) => ({ width, blanks: group })),
     );
 
-    return fit(lanes, (lane) => lane.width, maxWidth, sawKerf).map((onBoard) => {
+    return fit(lanes, (lane) => lane.width, board.width, sawKerf).map((onBoard) => {
       const placed: PlacedStrip[] = [];
       let y = 0;
       for (const lane of onBoard) {
@@ -104,7 +109,7 @@ export function layoutBoards(strips: Strip[], settings: Settings): Board[] {
         }
         y += lane.width + sawKerf;
       }
-      return { material, thickness, strips: placed };
+      return { material, thickness, crossCut, strips: placed };
     });
   });
 }
@@ -122,7 +127,8 @@ export interface Rect {
  * blanks along the board, then crosscutting strips and pieces.
  */
 export function boardStats(board: Board, strips: Strip[], settings: Settings) {
-  const { maxLength, maxWidth, sawKerf } = settings;
+  const { sawKerf } = settings;
+  const { length: maxLength, width: maxWidth } = boardSize(settings, board.crossCut);
   let cuts = 0;
   let cutLength = 0;
   let used = 0;

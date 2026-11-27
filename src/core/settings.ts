@@ -13,3 +13,9 @@ export const FACTORY_SETTINGS: Readonly<Settings> = {
   shortStripRatio: 0.4,
   orderDecimals: 1,
 };
+
+/** The longest and widest strip a board gives, in the direction the strip is ripped. */
+export function boardSize(settings: Settings, crossCut: boolean) {
+  const { maxLength, maxWidth } = settings;
+  return crossCut ? { length: maxWidth, width: maxLength } : { length: maxLength, width: maxWidth };
+}

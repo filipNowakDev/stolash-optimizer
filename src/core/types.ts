@@ -9,7 +9,6 @@ export type ReasonId =
   | 'nonPositiveWidth'
   | 'widthExceedsBoard'
   | 'longerThanBoard'
-  | 'crossGrain'
   | 'adjacentEdges'
   | 'finishedPart'
   | 'mixedEdgeProducts';
@@ -63,6 +62,8 @@ export interface Candidate {
   edgeL2: EdgeLabel | undefined;
   edgeThickness: number;
   acrossGrain: boolean;
+  /** Ripped across the board to keep the grain, so no longer than the board is wide. */
+  crossCut: boolean;
 }
 
 export interface PartException {
@@ -82,6 +83,7 @@ export interface Strip {
   edgeL1: EdgeLabel | undefined;
   edgeL2: EdgeLabel | undefined;
   stripWidth: number;
+  crossCut: boolean;
   orderLength: number;
   pieces: StripPiece[];
   usedLength: number;

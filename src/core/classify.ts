@@ -1,5 +1,6 @@
 // Pure: no DOM, storage or dictionaries (PRD section 15).
 import { round } from './numbers';
+import { boardSize } from './settings';
 import type { Candidate, Edge, Part, PartException, ReasonId, Settings } from './types';
 
 export interface Classification {
@@ -22,6 +23,7 @@ function classifyUnbanded(part: Part, settings: Settings): Candidate | ReasonId 
     edgeL2: undefined,
     edgeThickness: 0,
     acrossGrain: false,
+    crossCut: false,
   };
 }
 
@@ -42,7 +44,8 @@ function classifyPart(part: Part, settings: Settings, grainLock: boolean): Candi
   }
 
   const acrossGrain = alongGrain === 0;
-  if (acrossGrain && grainLock) return 'crossGrain';
+  // Keeping the grain means the strip itself must run across the board.
+  const crossCut = acrossGrain && grainLock;
 
   const pieceLength = acrossGrain ? part.width : part.length;
   const perpendicular = acrossGrain ? part.length : part.width;
@@ -51,7 +54,7 @@ function classifyPart(part: Part, settings: Settings, grainLock: boolean): Candi
     : perpendicular;
   const boardWidth = round(exact, settings.orderDecimals);
   if (boardWidth <= 0) return 'nonPositiveWidth';
-  if (boardWidth > settings.maxWidth) return 'widthExceedsBoard';
+  if (boardWidth > boardSize(settings, crossCut).width) return 'widthExceedsBoard';
 
   return {
     part,
@@ -61,6 +64,7 @@ function classifyPart(part: Part, settings: Settings, grainLock: boolean): Candi
     edgeL2: edges.length === 2 ? product.label : undefined,
     edgeThickness: product.thickness,
     acrossGrain,
+    crossCut,
   };
 }
 

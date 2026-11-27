@@ -127,7 +127,6 @@ export const pl: Record<MessageId, string> = {
   'reason.nonPositiveWidth': 'szerokość pasa nie większa od zera',
   'reason.widthExceedsBoard': 'szersze niż płyta',
   'reason.longerThanBoard': 'dłuższe niż płyta',
-  'reason.crossGrain': 'okleina w poprzek usłojenia',
   'reason.adjacentEdges': 'dwie sąsiednie krawędzie',
   'reason.finishedPart': 'zamówić jako gotową formatkę',
   'reason.mixedEdgeProducts': 'różne okleiny',

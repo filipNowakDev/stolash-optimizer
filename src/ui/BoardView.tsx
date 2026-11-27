@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { boardStats, type Board } from '../core/boards';
+import { boardSize } from '../core/settings';
 import type { Settings, Strip } from '../core/types';
 import { t, type Locale } from '../i18n';
 import { Hatch, Piece } from './drawing';
@@ -18,19 +19,23 @@ interface Props {
 export function BoardView({ locale, settings, board, number, total, strips }: Props) {
   const hatch = useId();
   const mm = (value: number) => formatNumber(locale, value, 1);
-  const { maxLength, maxWidth, sawKerf } = settings;
+  const { sawKerf } = settings;
+  const { length: maxLength, width: maxWidth } = boardSize(settings, board.crossCut);
   const stats = boardStats(board, strips, settings);
   const footer = [
     materialName(locale, board.material),
     board.thickness === null ? '' : `${mm(board.thickness)} mm`,
     t(locale, 'boards.board', { n: number, total }),
     `${mm(maxLength)} × ${mm(maxWidth)} mm`,
+    board.crossCut ? t(locale, 'flag.acrossGrain') : '',
     `${t(locale, 'boards.waste')}: ${formatNumber(locale, stats.wastePercent, 1)} %`,
     `${t(locale, 'boards.cuts')}: ${stats.cuts} (${formatNumber(locale, stats.cutLength / 1000, 2)} m)`,
   ];
 
   return (
-    <figure className="max-w-4xl break-inside-avoid py-3">
+    <figure
+      className={`${board.crossCut ? 'max-w-2xl' : 'max-w-4xl'} break-inside-avoid py-3`}
+    >
       <svg viewBox={`-4 -4 ${maxLength + 8} ${maxWidth + 8}`} width="100%">
         <defs>
           <Hatch id={hatch} />

@@ -1,5 +1,6 @@
 // Pure: no DOM, storage or dictionaries (PRD section 15).
 import { binPack } from './binpack';
+import { boardSize } from './settings';
 import type { Candidate, PartException, Settings, Strip, StripFlag, StripPiece } from './types';
 
 export interface PackResult {
@@ -19,6 +20,7 @@ export function groupKey(c: Candidate): string {
     c.boardWidth,
     c.edgeThickness,
     c.acrossGrain,
+    c.crossCut,
   ]);
 }
 
@@ -27,14 +29,13 @@ const um = (mm: number) => Math.round(mm * 1000);
 
 /** PRD section 13. */
 export function pack(candidates: Candidate[], settings: Settings): PackResult {
-  const { maxLength, sawKerf, trimAllowance, shortStripRatio, minStripWidth } = settings;
-  const usable = um(maxLength - trimAllowance);
+  const { sawKerf, trimAllowance, shortStripRatio, minStripWidth } = settings;
   const kerf = um(sawKerf);
   const result: PackResult = { strips: [], exceptions: [], proven: true };
 
   const groups = new Map<string, Candidate[]>();
   for (const candidate of candidates) {
-    if (candidate.pieceLength > maxLength) {
+    if (candidate.pieceLength > boardSize(settings, candidate.crossCut).length) {
       result.exceptions.push({ part: candidate.part, reason: 'longerThanBoard' });
       continue;
     }
@@ -44,11 +45,13 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
     else groups.set(key, [candidate]);
   }
 
-  const isShort = (used: number) => used < shortStripRatio * usable - 1e-6;
-  const orderUm = (used: number) => (isShort(used) ? used + um(trimAllowance) : um(maxLength));
-
   for (const [key, group] of groups) {
     const head = group[0]!;
+    const boardLength = boardSize(settings, head.crossCut).length;
+    const usable = um(boardLength - trimAllowance);
+    const isShort = (used: number) => used < shortStripRatio * usable - 1e-6;
+    const orderUm = (used: number) =>
+      isShort(used) ? used + um(trimAllowance) : um(boardLength);
     const pieces: StripPiece[] = group.flatMap((c) =>
       Array.from({ length: c.part.quantity }, () => ({
         name: c.part.name,
@@ -61,7 +64,7 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
     const addStrip = (content: StripPiece[], trimTight: boolean) => {
       const used = content.reduce((sum, p) => sum + um(p.length), kerf * (content.length - 1));
       const short = !trimTight && isShort(used);
-      const order = trimTight ? um(maxLength) : orderUm(used);
+      const order = trimTight ? um(boardLength) : orderUm(used);
       const flags: StripFlag[] = [];
       if (short) flags.push('short');
       if (head.boardWidth < minStripWidth) flags.push('narrow');
@@ -74,6 +77,7 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
         edgeL1: head.edgeL1,
         edgeL2: head.edgeL2,
         stripWidth: head.boardWidth,
+        crossCut: head.crossCut,
         orderLength: order / 1000,
         pieces: content,
         usedLength: used / 1000,

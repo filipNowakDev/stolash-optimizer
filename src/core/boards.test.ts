@@ -17,6 +17,7 @@ function strip(
     thickness: 18,
     edgeL1: null,
     edgeL2: undefined,
+    crossCut: false,
     stripWidth,
     orderLength,
     pieces: [],
@@ -85,6 +86,20 @@ describe('layoutBoards', () => {
   it('keeps materials on separate boards', () => {
     const boards = layoutBoards([strip(300), strip(300, 2760, 'Buk')], settings);
     expect(boards.map((b) => b.material)).toEqual(['Dąb', 'Buk']);
+  });
+
+  it('puts across-grain strips on turned boards of their own', () => {
+    const across = { ...strip(600, 2030), crossCut: true };
+    const boards = layoutBoards([across, across, strip(600)], settings);
+    expect(boards.map((b) => [b.crossCut, b.strips.length])).toEqual([
+      [true, 2],
+      [false, 1],
+    ]);
+    // Side by side along the 2760 side, each 2030 long.
+    expect(boards[0]!.strips.map((s) => [s.y, s.length])).toEqual([
+      [0, 2030],
+      [603.2, 2030],
+    ]);
   });
 
   it('keeps a doubled pair together', () => {

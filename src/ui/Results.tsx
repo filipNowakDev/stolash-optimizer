@@ -27,7 +27,14 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
   // Strip width can only be non-positive after classification, so it is listed here too.
   const tooThin = result.exceptions.filter((e) => e.reason === 'nonPositiveWidth');
   const skippedCount = skipped.length + tooThin.length;
-  const firstOfGroup = new Set<string>();
+  const offered = new Set<string>();
+  // Pairing needs two full-length strips of a group.
+  const fullStrips = new Map<string, number>();
+  for (const strip of result.strips) {
+    if (!strip.flags.includes('short')) {
+      fullStrips.set(strip.groupKey, (fullStrips.get(strip.groupKey) ?? 0) + 1);
+    }
+  }
 
   const cutMap = () => (
     <>
@@ -92,8 +99,11 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           {!result.proven && <p className="text-amber-700">{t(locale, 'preview.notProven')}</p>}
           {result.strips.length === 0 && <p>{t(locale, 'results.empty')}</p>}
           {result.strips.map((strip, i) => {
-            const offerPair = canDouble(strip, settings) && !firstOfGroup.has(strip.groupKey);
-            if (offerPair) firstOfGroup.add(strip.groupKey);
+            const offerPair =
+              canDouble(strip, settings) &&
+              (fullStrips.get(strip.groupKey) ?? 0) >= 2 &&
+              !offered.has(strip.groupKey);
+            if (offerPair) offered.add(strip.groupKey);
             return (
               <div key={i}>
                 {offerPair && (
