@@ -101,21 +101,21 @@ describe('App', () => {
     render(<App store={store} />);
     paste();
 
-    // Row 6 is the boki.
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 6 Boki szafy po lewej' }));
+    // Row 6 is part A.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 6 Przykład A' }));
     generate();
     expect(screen.getByText('Elements: 11 of 12 selected')).toBeTruthy();
     expect(store.loadSession()!.excluded).toEqual([5]);
     expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(1);
 
     // Ticking it again brings it back without a new import.
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 6 Boki szafy po lewej' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Include 6 Przykład A' }));
     generate();
     expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(2);
 
     const sheet = () => document.querySelector('[data-testid="print-sheet"]')!;
     expect(sheet().querySelectorAll('section')).toHaveLength(6);
-    // 4 boki, 10 across-grain, 3 unbanded and 2 mirror strips; the 4 doors come whole.
+    // 4 of part A, 10 across-grain, 3 unbanded and 2 mirror strips; the 4 doors come whole.
     expect(sheet().textContent).toContain('strips: 19, whole elements: 4');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Board drawings' }));
     expect(sheet().querySelectorAll('section')).toHaveLength(5);
