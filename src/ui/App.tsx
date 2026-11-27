@@ -4,7 +4,7 @@ import { isMapComplete, parseRows, proposeMap, type Encoding, type Table } from 
 import { FACTORY_SETTINGS } from '../core/settings';
 import type { Settings } from '../core/types';
 import { detectLocale, t, type Locale } from '../i18n';
-import type { ProjectStore, Session, Snapshot } from '../store/ProjectStore';
+import type { ProjectStore } from '../store/ProjectStore';
 import { ColumnsTab, type Draft } from './ColumnsTab';
 import { GenerateBar, type GenerateState } from './GenerateBar';
 import { HeaderMenu } from './HeaderMenu';
@@ -12,6 +12,7 @@ import { ImportCard } from './ImportCard';
 import { Materials, suggestedGrain } from './Materials';
 import { PartSelection } from './PartSelection';
 import { Results } from './Results';
+import type { Session, Snapshot } from './session';
 import { SettingsPanel, type SettingsGroup } from './SettingsPanel';
 import { Tabs, type TabItem } from './Tabs';
 import { Versions } from './Versions';
@@ -32,23 +33,12 @@ const stable = (value: unknown) =>
       : v,
   );
 
-/** A session saved before the Generate button already had results on screen. */
-function restore(store: ProjectStore): Session | null {
-  const saved = store.loadSession();
-  if (!saved) return null;
-  const session = { ...saved, excluded: saved.excluded ?? [] };
-  if (session.generated === undefined) {
-    session.generated = snapshot(session, store.loadSettings());
-  }
-  return session;
-}
-
 export function App({ store }: { store: ProjectStore }) {
   const [locale, setLocale] = useState<Locale>(
     () => store.loadLocale() ?? detectLocale(navigator.language),
   );
   const [settings, setSettings] = useState<Settings>(() => store.loadSettings());
-  const [session, setSession] = useState<Session | null>(() => restore(store));
+  const [session, changeSession] = useState<Session | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [tab, setTab] = useState<SetupTab>('elements');
   const [resets, setResets] = useState(0);
@@ -70,11 +60,6 @@ export function App({ store }: { store: ProjectStore }) {
     void store.saveSettings(next);
   };
 
-  const changeSession = (next: Session | null) => {
-    setSession(next);
-    void (next ? store.saveSession(next) : store.clearSession());
-  };
-
   /** Reads the parts out of a table. Results appear only after Generate. */
   const read = (next: Draft, grain: Record<string, boolean>) => {
     setDraft(next);
@@ -90,7 +75,6 @@ export function App({ store }: { store: ProjectStore }) {
       excluded: [],
       grainLock: suggestedGrain(parts, grain),
       doubledGroups: {},
-      timestamp: Date.now(),
       generated: null,
     });
   };
@@ -132,7 +116,15 @@ export function App({ store }: { store: ProjectStore }) {
   );
   const result = versions?.find((v) => v.id === session?.version) ?? versions?.[0];
 
-  const needsFile = <p className="muted">{t(locale, 'setup.noFile')}</p>;
+  const needsFile = (
+    <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-10 text-center">
+      <span aria-hidden="true" className="text-3xl text-slate-400">
+        ⇪
+      </span>
+      <p className="font-medium">{t(locale, 'setup.empty')}</p>
+      <p className="muted">{t(locale, 'setup.noFile')}</p>
+    </div>
+  );
   const parameters = (group: SettingsGroup): TabItem<SetupTab> => ({
     id: group,
     label: t(locale, `setup.tab.${group}`),
@@ -194,7 +186,7 @@ export function App({ store }: { store: ProjectStore }) {
             onChange={(map) => read({ ...draft, map }, session?.grainLock ?? {})}
           />
         ) : (
-          <p className="muted">{t(locale, session ? 'setup.reload' : 'setup.noFile')}</p>
+          needsFile
         ),
     },
   ];

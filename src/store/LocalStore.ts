@@ -1,17 +1,19 @@
 import { FACTORY_SETTINGS } from '../core/settings';
 import type { Settings } from '../core/types';
 import type { Locale } from '../i18n';
-import type { ColumnMap, ProjectStore, Session } from './ProjectStore';
+import type { ColumnMap, ProjectStore } from './ProjectStore';
 
 export const STORAGE_KEYS = {
   settings: 'stolash.settings.v1',
   locale: 'stolash.locale.v1',
   columnMap: 'stolash.columnMap.v1',
-  session: 'stolash.session.v1',
 } as const;
 
 export class LocalStore implements ProjectStore {
-  constructor(private readonly storage: Storage) {}
+  constructor(private readonly storage: Storage) {
+    // Earlier releases kept the job between visits; do not leave it behind.
+    storage.removeItem('stolash.session.v1');
+  }
 
   loadSettings(): Settings {
     const stored = this.read<Settings>(STORAGE_KEYS.settings);
@@ -41,18 +43,6 @@ export class LocalStore implements ProjectStore {
 
   async saveLocale(locale: Locale): Promise<void> {
     this.storage.setItem(STORAGE_KEYS.locale, locale);
-  }
-
-  loadSession(): Session | null {
-    return this.read<Session>(STORAGE_KEYS.session);
-  }
-
-  async saveSession(session: Session): Promise<void> {
-    this.write(STORAGE_KEYS.session, session);
-  }
-
-  async clearSession(): Promise<void> {
-    this.storage.removeItem(STORAGE_KEYS.session);
   }
 
   private read<T>(key: string): T | null {

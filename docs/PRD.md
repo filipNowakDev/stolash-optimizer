@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 3.2 |
+| Document version | 3.3 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -143,9 +143,9 @@ v1 writes preferences through `ProjectStore` into `localStorage`. The browser is
 | Workshop settings, the table below | `stolash.settings.v1` | yes |
 | UI language | `stolash.locale.v1` | yes |
 | Column map and one-column edge value table | `stolash.columnMap.v1` | yes |
-| Parsed parts, grain choices, double-strip toggles | `stolash.session.v1` | no |
+| Parsed parts, grain choices, double-strip toggles | not stored | no |
 
-First visit writes the factory settings. After that, the stored object wins, including values the user set back to a factory number. "Reset preferences" in the header menu writes the factory settings again and recalculates. It leaves language, the column map, and the session in place.
+First visit writes the factory settings. After that, the stored object wins, including values the user set back to a factory number. "Reset preferences" in the header menu writes the factory settings again and recalculates. It leaves language, the column map, and the current job in place.
 
 | Field | Factory default | Meaning | Validation |
 |---|---|---|---|
@@ -173,7 +173,7 @@ L_eff = maxLength - trimAllowance
 
 Any valid change is saved immediately and takes effect at the next generation. An invalid value is not saved. The reason shows on that field.
 
-Grain lock per material and "pair into a double strip" are session choices, stored with the session, not in the workshop settings. The name heuristic only suggests the grain checkbox. The stored choice wins on reload.
+Grain lock per material and "pair into a double strip" are session choices, stored with the session, not in the workshop settings. The name heuristic only suggests the grain checkbox. The session lives in memory and ends with the visit.
 
 ## 9. Input and parser
 
@@ -491,7 +491,7 @@ The header shows the product name and a menu button. The menu contains the langu
 The page is three numbered steps in cards:
 
 1. **Import.** A drop zone and a paste area. After load: row count, profile, encoding and skipped count.
-2. **Set up**, in tabs: Elements, Materials, Board and saw (`maxLength`, `maxWidth`, `sawKerf`, `trimAllowance`), Edge banding (`defaultEdgeThickness`, `defaultEdgeLabel`, `subtractEdge`), Optimisation (the other settings), and Columns (encoding, delimiter, preview of the first 5 rows, column map, one-column edge value table). The parameter tabs work without a file. The Columns tab needs the file in memory, so after a reload it asks for the file again.
+2. **Set up**, in tabs: Elements, Materials, Board and saw (`maxLength`, `maxWidth`, `sawKerf`, `trimAllowance`), Edge banding (`defaultEdgeThickness`, `defaultEdgeLabel`, `subtractEdge`), Optimisation (the other settings), and Columns (encoding, delimiter, preview of the first 5 rows, column map, one-column edge value table). The parameter tabs work without a file. Until a file is loaded or a list pasted, the Elements, Materials and Columns tabs show a "No elements yet" prompt.
 3. **Results**, shown once generated: the versions table, then the result tabs.
 
 Under all the settings, and kept in view while scrolling, is one button with a line of explanation:
@@ -560,7 +560,7 @@ A print panel above the results has a checkbox each for who does what, strip ord
 
 ### Session
 
-`stolash.session.v1` stores the parsed parts, grain choices, double-strip toggles, and a timestamp. Reload restores the last generated result and the inputs. "Clear session" removes that key and keeps settings, the column map, and the language.
+The session (parsed parts, grain choices, element selection, double-strip toggles, chosen version) is not stored. Every visit and reload starts with an empty list. "Clear session" empties the current one and keeps settings, the column map, and the language. A `stolash.session.v1` key left by an earlier release is deleted.
 
 ## 15. GitHub Pages architecture
 
@@ -601,18 +601,15 @@ ProjectStore
   saveColumnMap(map) -> Promise
   loadLocale() -> "en" | "pl" | null
   saveLocale(locale) -> Promise
-  loadSession() -> Session | null
-  saveSession(session) -> Promise
-  clearSession() -> Promise
 ```
 
-`Session` holds mapped parts, grain choices, double-strip flags, and a timestamp. It does not hold the raw file text. Locale is separate from the session.
+The session is not part of this interface: v1 never stores it.
 
 When the cloud phase starts, a second implementation of this interface arrives, plus methods v1 does not pretend to have:
 
 - `listProjects`, `saveProject`, `loadProject`, `deleteProject`
 - sign-in (magic link)
-- `projects` table: `id`, `user_id`, `name`, `settings`, `column_map`, `locale`, `session`, `updated_at`
+- `projects` table: `id`, `user_id`, `name`, `settings`, `column_map`, `locale`, `session` (only for projects the user saves), `updated_at`
 - RLS: a row is visible only when `user_id = auth.uid()`
 - conflict rule for that phase: last write wins
 
@@ -632,7 +629,7 @@ Until that phase the repo has no Supabase client, no environment variables, and 
 6. Two widths, two materials, two board thicknesses, or two edge labels do not share a strip.
 7. The sample `lista formatek` CSV decodes as Windows-1250, shows names with Polish characters correctly, and is recognized as the Lista formatek profile with no header. The tab TXT of the same report parses to the same 12 rows. A bad quantity is on the skipped list, and the other rows still produce a result.
 8. A 50 mm strip width is flagged `narrow`. After pairing, two full strips become one row of width 50 + 50 + 3.2 = 103.2 with L1 and L2. A third full strip stays single.
-9. Reload restores parameters, the column map, the last session, and the language. "Clear session" removes the result and keeps parameters and language. The browser network log shows no request carrying the CSV body.
+9. Reload restores parameters, the column map, and the language, and shows an empty list. "Clear session" removes the result and keeps parameters and language. The browser network log shows no request carrying the CSV body.
 10. The Polish CSV opens in Excel with Polish characters, semicolons, and comma decimals. The English CSV uses comma delimiters and dot decimals. The printed cut map has no import zone.
 11. On a fresh profile with an English browser language, the UI is English. Choosing **Polski** in the header menu switches every chrome string, tab, remark, and export header without changing strip counts or ordered millimeters. Reload keeps Polish. Imported material names stay as they were in the file. The same coverage holds in the other direction.
 12. On the sample Lista formatek file, with grain lock left on and `subtractEdge` off: the only banded strip order is quantity 4 of 2760 × 600 × 18, L1 set to the default edge label, material blank. The unbanded strip orders, with L1 and L2 empty, are 1 of 2760 × 650 (the five 614-wide parts are ripped from it), 2 of 2760 × 282, and 1 of 25 × 15 for each `Przykład E` row. Przykład B and C give `acrossGrain` orders of 4 × 2030 × 600 and 6 × 2030 × 590. Both door rows are `finishedPart`. The unnamed rows and both `Przykład E` rows are listed as unbanded.

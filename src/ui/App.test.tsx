@@ -34,25 +34,32 @@ describe('App', () => {
     expect(store.loadLocale()).toBe('pl');
   });
 
-  it('imports a pasted table, then keeps the result across reload and language switch', () => {
+  it('starts empty on every visit, keeping the language', () => {
     const store = new LocalStore(localStorage);
     const { unmount } = render(<App store={store} />);
-
     paste();
     generate();
     expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(2);
-    expect(panel().getByRole('cell', { name: '650' })).toBeTruthy();
 
-    unmount();
-    render(<App store={store} />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('button', { name: 'Polski' }));
     expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(2);
     expect(panel().getByRole('columnheader', { name: 'Okleina L1' })).toBeTruthy();
     expect(panel().getAllByRole('cell', { name: 'Obrzeże 0,8 mm' })).toHaveLength(3);
 
+    unmount();
+    render(<App store={store} />);
+    expect(screen.getAllByText('Brak elementów')).toHaveLength(3);
+    expect(screen.queryByTestId('results-panel')).toBeNull();
+  });
+
+  it('empties the page when the session is cleared', () => {
+    render(<App store={new LocalStore(localStorage)} />);
+    paste();
+    generate();
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Wyczyść sesję' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear session' }));
+    expect(screen.getAllByText('No elements yet')).toHaveLength(3);
     expect(screen.queryByTestId('results-panel')).toBeNull();
   });
 
@@ -66,7 +73,6 @@ describe('App', () => {
     expect(radios[0]!.checked).toBe(true);
     fireEvent.click(radios[1]!);
     expect((screen.getAllByRole('radio')[1] as HTMLInputElement).checked).toBe(true);
-    expect(store.loadSession()!.version).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Waste, m²' }));
     expect(screen.getAllByRole('radio')).toHaveLength(radios.length);
   });
@@ -105,7 +111,6 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Include 6 Przykład A' }));
     generate();
     expect(screen.getByText('Elements: 11 of 12 selected')).toBeTruthy();
-    expect(store.loadSession()!.excluded).toEqual([5]);
     expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(1);
 
     // Ticking it again brings it back without a new import.
