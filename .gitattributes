@@ -1,0 +1,5 @@
+* text=auto eol=lf
+yarn.lock linguist-generated
+# PRO100 exports are Windows-1250 with CRLF: keep their bytes untouched.
+*.csv -text
+*.txt -text

@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Yarn (Berry)
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+.pnp.*
+
+# Local overrides, secrets, logs
+mise.local.toml
+.env
+.env.*
+*.log
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Claude Code personal settings
+.claude/settings.local.json
