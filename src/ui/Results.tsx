@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Result } from '../core/job';
 import type { SkippedRow } from '../core/parse';
 import { canDouble } from '../core/order';
@@ -60,15 +60,29 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
     </p>
   );
 
-  const boards = () => (
+  // The heading, any introduction and the first drawing never part at a page break.
+  const lead = (intro: ReactNode, drawings: ReactNode[]) => (
     <>
-      <h3 className="pt-2 font-semibold">
-        {t(locale, 'boards.title', { n: result.boards.length })} ·{' '}
-        {t(locale, 'who.wholesalerCuts')}: {formatNumber(locale, result.cutLength / 1000, 2)} m
-      </h3>
-      <p className="text-sm">{t(locale, 'boards.note')}</p>
-      {legend}
-      {result.boards.map((board, i) => (
+      <div className="break-inside-avoid">
+        {intro}
+        {drawings[0]}
+      </div>
+      {drawings.slice(1)}
+    </>
+  );
+
+  const boards = (heading?: ReactNode) =>
+    lead(
+      <>
+        {heading}
+        <h3 className="pt-2 font-semibold">
+          {t(locale, 'boards.title', { n: result.boards.length })} ·{' '}
+          {t(locale, 'who.wholesalerCuts')}: {formatNumber(locale, result.cutLength / 1000, 2)} m
+        </h3>
+        <p className="text-sm">{t(locale, 'boards.note')}</p>
+        {legend}
+      </>,
+      result.boards.map((board, i) => (
         <BoardView
           key={i}
           locale={locale}
@@ -78,13 +92,16 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           total={result.boards.length}
           strips={result.strips}
         />
-      ))}
-    </>
-  );
+      )),
+    );
 
-  const strips = () => (
-    <>
-      {result.strips.map((strip, i) => (
+  const strips = (heading?: ReactNode) =>
+    lead(
+      <>
+        {heading}
+        {legend}
+      </>,
+      result.strips.map((strip, i) => (
         <StripView
           key={i}
           locale={locale}
@@ -93,9 +110,8 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           number={i + 1}
           withPieceList
         />
-      ))}
-    </>
-  );
+      )),
+    );
 
   return (
     <>
@@ -162,10 +178,7 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
                   {boards()}
                 </>
               ) : id === 'strips' ? (
-                <>
-                  {legend}
-                  {strips()}
-                </>
+                strips()
               ) : (
                 <TableTab key={id} id={id} locale={locale} settings={settings} result={result} />
               ),
