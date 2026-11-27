@@ -1,6 +1,7 @@
 // The whole calculation from parsed parts to result lists. Pure.
 import { boardStats, layoutBoards, layoutChoices, type Board } from './boards';
 import { classify } from './classify';
+import { packColumns, type Solver } from './columns';
 import { mergeStrips, type Score } from './fill';
 import { applyDoubling, collapseExceptions, collapseParts, orderRows } from './order';
 import { pack } from './pack';
@@ -75,11 +76,18 @@ function layouts(
   classified: ReturnType<typeof classify>,
   settings: Settings,
   doubled: Record<string, boolean>,
+  solver: Solver | undefined,
 ) {
+  const { algorithm } = settings;
   // Ways to fill the strips. Earlier ones win ties: they order less.
-  const plain = pack(classified.candidates, { ...settings, fitNarrower: false });
-  const plans = [{ proven: plain.proven, strips: plain.strips }];
-  if (settings.fitNarrower) {
+  const plain = pack(
+    classified.candidates,
+    { ...settings, fitNarrower: false },
+    algorithm === 'ffd' ? 0 : undefined,
+  );
+  let plans = [{ proven: plain.proven, strips: plain.strips }];
+  let areaBound: number | null = null;
+  if (algorithm !== 'ffd' && settings.fitNarrower) {
     const fitted = pack(classified.candidates, settings);
     const rate = (stock: Strip[]): Score => {
       // No random restarts: this runs once for every merge tried.
@@ -92,6 +100,15 @@ function layouts(
     );
   }
 
+  // HiGHS orders the least strip area, which is not the goal itself, so its plan
+  // competes with the others. First, so it wins ties.
+  if (algorithm === 'highs') {
+    if (!solver) throw new Error('The HiGHS algorithm needs a loaded solver');
+    const columns = packColumns(classified.candidates, settings, solver);
+    plans.unshift({ proven: false, strips: columns.strips });
+    areaBound = columns.areaBound;
+  }
+
   const candidates = plans.flatMap((plan) => {
     const strips = applyDoubling(plan.strips, settings, doubled);
     return layoutChoices(strips, settings).map((boards) => ({
@@ -102,7 +119,7 @@ function layouts(
     }));
   });
   // Parts too long for any board; the same however the strips are filled.
-  return { candidates, exceptions: plain.exceptions };
+  return { candidates, exceptions: plain.exceptions, areaBound };
 }
 
 /**
@@ -116,9 +133,11 @@ export function calculateVersions(
   settings: Settings,
   grainLock: Record<string, boolean>,
   doubled: Record<string, boolean>,
+  /** Needed for the 'highs' algorithm only. */
+  solver?: Solver,
 ) {
   const classified = classify(parts, settings, grainLock);
-  const { candidates, exceptions } = layouts(classified, settings, doubled);
+  const { candidates, exceptions, areaBound } = layouts(classified, settings, doubled, solver);
 
   type Candidate = (typeof candidates)[number];
   // Figures that would read the same in the table count as the same version.
@@ -160,7 +179,7 @@ export function calculateVersions(
   // Offered last, so it never becomes the default.
   if (!settings.shortStrips) {
     const shortened = { ...settings, shortStrips: true, shortStripRatio: 1 };
-    const best = ranked('cuts', layouts(classified, shortened, doubled).candidates)[0]!;
+    const best = ranked('cuts', layouts(classified, shortened, doubled, solver).candidates)[0]!;
     if (!chosen.some((c) => same(c.candidate, best))) {
       chosen.push({ candidate: best, goals: [], short: true });
     }
@@ -178,6 +197,8 @@ export function calculateVersions(
     short,
     ...candidate,
     ...lists(candidate),
+    /** Least strip area any packing could order, mm²; only HiGHS gives one. */
+    areaBound: short ? null : areaBound,
     /** mm of wholesaler cuts over all boards. */
     cutLength: candidate.metrics.cutLength,
   }));

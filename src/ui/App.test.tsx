@@ -1,8 +1,12 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FORMATEK_TXT } from '../core/fixtures';
-import { LocalStore } from '../store/LocalStore';
+import { FACTORY_SETTINGS } from '../core/settings';
+import { LocalStore, STORAGE_KEYS } from '../store/LocalStore';
 import { App } from './App';
+
+// Loading the real solver is covered in the core tests; here it is unreachable.
+vi.mock('./solver', () => ({ loadSolver: () => Promise.reject(new Error('offline')) }));
 
 /** The open result tab, apart from the element list and the print sheet. */
 const panel = () => within(screen.getByTestId('results-panel'));
@@ -17,6 +21,14 @@ const generate = () =>
   fireEvent.click(screen.getByRole('button', { name: /^(Generate|Update) cut lists$/ }));
 
 describe('App', () => {
+  // These tests are about the screens, so they use the algorithm that needs no download.
+  beforeEach(() => {
+    localStorage.setItem(
+      STORAGE_KEYS.settings,
+      JSON.stringify({ ...FACTORY_SETTINGS, algorithm: 'optimized' }),
+    );
+  });
+
   afterEach(() => {
     cleanup();
     localStorage.clear();
@@ -100,6 +112,28 @@ describe('App', () => {
     fireEvent.change(length, { target: { value: '2800' } });
     generate();
     expect(panel().getAllByRole('cell', { name: '2800' }).length).toBeGreaterThan(0);
+  });
+
+  it('offers a choice of packing algorithm that applies on the next generation', () => {
+    render(<App store={new LocalStore(localStorage)} />);
+    paste();
+    generate();
+    const select = screen.getByLabelText(/Packing algorithm/) as HTMLSelectElement;
+    expect([...select.options].map((o) => o.value)).toEqual(['highs', 'optimized', 'ffd']);
+
+    fireEvent.change(select, { target: { value: 'ffd' } });
+    generate();
+    expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(2);
+  });
+
+  it('uses HiGHS by default and still gives results when it cannot load', async () => {
+    localStorage.clear();
+    render(<App store={new LocalStore(localStorage)} />);
+    expect((screen.getByLabelText(/Packing algorithm/) as HTMLSelectElement).value).toBe('highs');
+    paste();
+    generate();
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(panel().getAllByRole('cell', { name: '600' })).toHaveLength(2);
   });
 
   it('leaves unticked elements out and prints the ticked sections', () => {

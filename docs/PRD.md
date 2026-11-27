@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 3.5 |
+| Document version | 3.7 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -160,6 +160,7 @@ First visit writes the factory settings. After that, the stored object wins, inc
 | `shortStrips` | no | Order poorly filled strips shorter than the board | yes / no |
 | `shortStripRatio` | 0.40 | Short-strip threshold against usable length | 0–1 |
 | `orderDecimals` | 1 | Decimal places on ordered length and width, and on the packing group width | integer 0–3 |
+| `algorithm` | `highs` | Packing algorithm, section 13 | `highs`, `optimized`, `ffd` |
 | `minOffcut` | 300 mm | A leftover with both sides at least this long counts as reusable | > 0 |
 | `fitNarrower` | yes | Narrower parts may go on wider strips when that orders less material | yes / no |
 
@@ -458,6 +459,14 @@ The cut map still lists each narrow strip and adds the note for `doubledStrip`: 
 
 When `fitNarrower` is on, a second step runs after packing. Parts may move into the leftover of a strip at least as wide, with the same material, thickness, L1 product, edge thickness, grain direction and board direction. The shop rips such a part to width from the side without banding, so only L1 and unbanded strips take part. Strip by strip, least ordered first, parts are moved out, and the moves are kept only when the ordered area (width × order length, over all strips) gets smaller. Emptied strips are dropped. Drawings show each rip as a shop cut, and the piece list says the width to rip to.
 
+### Choice of algorithm
+
+A dropdown in the Optimisation tab picks how parts are put on strips. It takes effect at the next generation. Strips are laid on boards the same way for all three.
+
+- `optimized`: everything described above, without the solver.
+- `ffd`: First Fit Decreasing, one width per strip, no narrower parts moved or joined.
+- `highs` (default): everything in `optimized`, plus one more strip set from column generation with the HiGHS solver. All sets are laid out and ranked alike, so the result is never worse than `optimized` on boards, then cuts. If the solver cannot load or fails, the `optimized` result is shown with a notice. Strips that could share parts are chosen together to order the least strip area; with `fitNarrower` off, or for parts banded on both edges, widths stay separate. The whole strips come from an integer program over the patterns found, limited by a node count. With full-length strips and a finished search it also gives a lower bound on ordered strip area, shown with the result. It says nothing about boards or cuts. The solver (about 4 MB) is loaded from the app's own files only when this option is used.
+
 ### Strips on whole boards
 
 The aim is the fewest whole boards, then the fewest meters of wholesaler cuts.
@@ -584,6 +593,7 @@ Pinned dependencies, bundled into the build and locked by `yarn.lock`:
 - PapaParse 5.4.1 — parse the decoded text
 - SheetJS `xlsx` 0.18.5 — export only
 - Tailwind CSS 4
+- HiGHS (`highs`) — column generation for the default algorithm, loaded on demand
 
 Nothing is loaded from a CDN. The shop machine needs a network only to load the app itself. The user's file is not sent anywhere.
 

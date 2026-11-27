@@ -148,6 +148,17 @@ export const en = {
   'who.legendOrderedMono': 'thick solid line: ordered from the wholesaler',
   'who.legendCutMono': 'dashed line: your cut',
 
+  'settings.algorithm': 'Packing algorithm',
+  'algorithm.optimized': 'Optimized, without HiGHS',
+  'algorithm.ffd': 'First Fit Decreasing',
+  'algorithm.highs': 'HiGHS column generation (default)',
+  'algorithm.optimized.hint': 'Searches for the fewest strips of each width, then moves and joins parts across widths.',
+  'algorithm.ffd.hint': 'Longest part first onto the first strip with room. One width per strip. Quick and predictable.',
+  'algorithm.highs.hint': 'Chooses all compatible widths together with the HiGHS solver, compares that with the optimizer, and keeps the best on boards, then cuts.',
+  'solver.loading': 'Loading the HiGHS solver…',
+  'solver.failed': 'The HiGHS solver was not available, so these results come from the optimizer without it.',
+  'solver.bound': 'Strip area ordered: {area} m². No choice of strips can order less than {bound} m². This says nothing about boards or cuts.',
+
   'tab.order': 'Strip order',
   'tab.finished': 'Finished parts',
   'tab.unbanded': 'No banding',

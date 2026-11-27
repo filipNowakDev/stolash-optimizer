@@ -8,7 +8,8 @@ import { FACTORY_SETTINGS } from './settings';
 import type { Edge, Part, Settings } from './types';
 
 // Section 17 describes short strips, which are off by default.
-const settings: Settings = { ...FACTORY_SETTINGS, shortStrips: true };
+const OPTIMIZED: Settings = { ...FACTORY_SETTINGS, algorithm: 'optimized' };
+const settings: Settings = { ...OPTIMIZED, shortStrips: true };
 const PCV = { label: 'PCV 0,8 biały', thickness: 0.8 };
 
 function part(length: number, edges: Edge[] = ['left'], extra: Partial<Part> = {}): Part {
@@ -198,13 +199,13 @@ describe('acceptance', () => {
   });
 
   it('orders full-length strips by default', () => {
-    const { strips } = calculate([part(800)], FACTORY_SETTINGS, {}, {});
+    const { strips } = calculate([part(800)], OPTIMIZED, {}, {});
     expect(strips).toMatchObject([{ orderLength: 2760, flags: [] }]);
   });
 
   it('offers different versions, the full-length best one first', () => {
     const { parts } = load(FORMATEK_CSV);
-    const versions = calculateVersions(parts, FACTORY_SETTINGS, {}, {});
+    const versions = calculateVersions(parts, OPTIMIZED, {}, {});
     expect(versions.length).toBeGreaterThan(1);
     expect(versions.length).toBeLessThanOrEqual(4);
     expect(versions[0]!.goals).toContain('cuts');
@@ -221,14 +222,14 @@ describe('acceptance', () => {
 
   it('adds a short-strips version last, without changing the default', () => {
     const { parts } = load(FORMATEK_CSV);
-    const versions = calculateVersions(parts, FACTORY_SETTINGS, {}, {});
+    const versions = calculateVersions(parts, OPTIMIZED, {}, {});
     const short = versions.at(-1)!;
     expect(short.short).toBe(true);
     expect(short.strips.some((s) => s.flags.includes('short'))).toBe(true);
     expect(short.metrics.boards).toBeLessThan(versions[0]!.metrics.boards);
     expect(versions[0]!.strips.some((s) => s.flags.includes('short'))).toBe(false);
 
-    const already = calculateVersions(parts, { ...FACTORY_SETTINGS, shortStrips: true }, {}, {});
+    const already = calculateVersions(parts, { ...OPTIMIZED, shortStrips: true }, {}, {});
     expect(already.some((v) => v.short)).toBe(false);
   });
 

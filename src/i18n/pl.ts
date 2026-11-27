@@ -150,6 +150,17 @@ export const pl: Record<MessageId, string> = {
   'who.legendOrderedMono': 'gruba linia ciągła: zamawiane w hurtowni',
   'who.legendCutMono': 'linia przerywana: Twoje cięcie',
 
+  'settings.algorithm': 'Algorytm układania',
+  'algorithm.optimized': 'Zoptymalizowany, bez HiGHS',
+  'algorithm.ffd': 'First Fit Decreasing',
+  'algorithm.highs': 'HiGHS, generowanie kolumn (domyślny)',
+  'algorithm.optimized.hint': 'Szuka najmniejszej liczby pasów każdej szerokości, potem przenosi i łączy elementy między szerokościami.',
+  'algorithm.ffd.hint': 'Najdłuższy element na pierwszy pas, na którym się mieści. Jedna szerokość na pas. Szybki i przewidywalny.',
+  'algorithm.highs.hint': 'Solver HiGHS dobiera razem wszystkie zgodne szerokości; wynik jest porównywany z optymalizatorem i zostaje najlepszy pod względem płyt, potem cięć.',
+  'solver.loading': 'Wczytywanie solvera HiGHS…',
+  'solver.failed': 'Solver HiGHS był niedostępny, więc te wyniki pochodzą z optymalizatora bez niego.',
+  'solver.bound': 'Zamawiana powierzchnia pasów: {area} m². Żaden dobór pasów nie może zamówić mniej niż {bound} m². Nie dotyczy to płyt ani cięć.',
+
   'tab.order': 'Zamówienie pasów',
   'tab.finished': 'Gotowe formatki',
   'tab.unbanded': 'Bez okleiny',

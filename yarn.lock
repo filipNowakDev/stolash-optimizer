@@ -982,6 +982,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"highs@npm:^1.16.0":
+  version: 1.16.0
+  resolution: "highs@npm:1.16.0"
+  checksum: 10c0/0acb634703ce961fe57148278dad309c1ac36d26234a74fb52b77ae70c80b968f866c23d543fe1a7258ed22f8afb646591318204142f1643060a49ce49199aa2
+  languageName: node
+  linkType: hard
+
 "html-encoding-sniffer@npm:^7.0.0":
   version: 7.0.0
   resolution: "html-encoding-sniffer@npm:7.0.0"
@@ -1512,6 +1519,7 @@ __metadata:
     "@types/react": "npm:19.3.3"
     "@types/react-dom": "npm:19.3.0"
     "@vitejs/plugin-react": "npm:6.3.0"
+    highs: "npm:^1.16.0"
     jsdom: "npm:31.0.1"
     papaparse: "npm:5.4.1"
     react: "npm:19.3.1"

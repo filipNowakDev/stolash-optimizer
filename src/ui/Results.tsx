@@ -139,7 +139,21 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           </details>
         )}
 
-        {!result.proven && <p className="text-amber-700">{t(locale, 'preview.notProven')}</p>}
+        {settings.algorithm === 'optimized' && !result.proven && (
+          <p className="text-amber-700">{t(locale, 'preview.notProven')}</p>
+        )}
+        {result.areaBound !== null && (
+          <p className="muted">
+            {t(locale, 'solver.bound', {
+              area: formatNumber(
+                locale,
+                result.strips.reduce((sum, s) => sum + s.stripWidth * s.orderLength, 0) / 1e6,
+                2,
+              ),
+              bound: formatNumber(locale, result.areaBound / 1e6, 2),
+            })}
+          </p>
+        )}
 
         {pairable.length > 0 && (
           <fieldset className="flex flex-col gap-1">

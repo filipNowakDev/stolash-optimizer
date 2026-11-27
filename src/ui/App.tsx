@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Solver } from '../core/columns';
 import { calculateVersions } from '../core/job';
 import { isMapComplete, parseRows, proposeMap, type Encoding, type Table } from '../core/parse';
 import { FACTORY_SETTINGS } from '../core/settings';
@@ -14,6 +15,7 @@ import { PartSelection } from './PartSelection';
 import { Results } from './Results';
 import type { Session, Snapshot } from './session';
 import { SettingsPanel, type SettingsGroup } from './SettingsPanel';
+import { loadSolver } from './solver';
 import { Tabs, type TabItem } from './Tabs';
 import { Versions } from './Versions';
 
@@ -101,19 +103,45 @@ export function App({ store }: { store: ProjectStore }) {
     changeSession({ ...session!, generated: snapshot(session!, settings), version: undefined });
   };
 
+  const [solver, setSolver] = useState<Solver | null>(null);
+  const [solverFailed, setSolverFailed] = useState(false);
+  const needsSolver = generated?.settings.algorithm === 'highs';
+  useEffect(() => {
+    if (!needsSolver || solver) return;
+    setSolverFailed(false);
+    loadSolver().then(
+      // A function-valued state needs the wrapper.
+      (loaded) => setSolver(() => loaded),
+      () => setSolverFailed(true),
+    );
+  }, [needsSolver, solver, generated]);
+  // Without the solver the job is still calculated, by the optimizer behind it.
+
   // Only what was generated is calculated; language and version never repack.
-  const versions = useMemo(
-    () =>
-      session && generated
-        ? calculateVersions(
-            session.parts.filter((_, i) => !generated.excluded.includes(i)),
-            generated.settings,
-            generated.grainLock,
-            session.doubledGroups,
-          )
-        : null,
-    [session?.parts, generated, session?.doubledGroups],
-  );
+  const calculated = useMemo(() => {
+    if (!session || !generated || (needsSolver && !solver && !solverFailed)) return null;
+    const run = (settings: Settings) =>
+      calculateVersions(
+        session.parts.filter((_, i) => !generated.excluded.includes(i)),
+        settings,
+        generated.grainLock,
+        session.doubledGroups,
+        solver ?? undefined,
+      );
+    const optimized = () => ({
+      versions: run({ ...generated.settings, algorithm: 'optimized' }),
+      fellBack: true,
+    });
+    if (needsSolver && !solver) return optimized();
+    try {
+      return { versions: run(generated.settings), fellBack: false };
+    } catch (error) {
+      if (!needsSolver) throw error;
+      console.error(error);
+      return optimized();
+    }
+  }, [session?.parts, generated, session?.doubledGroups, needsSolver && solver, solverFailed]);
+  const versions = calculated?.versions;
   const result = versions?.find((v) => v.id === session?.version) ?? versions?.[0];
 
   const needsFile = (
@@ -253,6 +281,17 @@ export function App({ store }: { store: ProjectStore }) {
 
           <GenerateBar locale={locale} state={state} onGenerate={generate} />
         </div>
+
+        {generated && needsSolver && !solver && !solverFailed && (
+          <p role="status" className="card print:hidden">
+            {t(locale, 'solver.loading')}
+          </p>
+        )}
+        {calculated?.fellBack && (
+          <p role="alert" className="card text-amber-800 print:hidden">
+            {t(locale, 'solver.failed')}
+          </p>
+        )}
 
         {session && versions && result && generated && (
           <>
