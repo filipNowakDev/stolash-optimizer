@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { calculate } from '../core/job';
+import { calculateVersions } from '../core/job';
 import { FACTORY_SETTINGS } from '../core/settings';
 import type { Settings } from '../core/types';
 import { detectLocale, t, type Locale } from '../i18n';
@@ -7,8 +7,10 @@ import type { ProjectStore, Session } from '../store/ProjectStore';
 import { HeaderMenu } from './HeaderMenu';
 import { ImportPanel } from './ImportPanel';
 import { Materials } from './Materials';
+import { PartSelection } from './PartSelection';
 import { Results } from './Results';
 import { SettingsPanel } from './SettingsPanel';
+import { Versions } from './Versions';
 
 export function App({ store }: { store: ProjectStore }) {
   const [locale, setLocale] = useState<Locale>(
@@ -33,12 +35,19 @@ export function App({ store }: { store: ProjectStore }) {
   };
 
   // Language is deliberately not a dependency: switching it never repacks.
-  const result = useMemo(
+  const versions = useMemo(
     () =>
       session &&
-      calculate(session.parts, settings, session.grainLock, session.doubledGroups),
-    [session, settings],
+      calculateVersions(
+        session.parts.filter((_, i) => !session.excluded?.includes(i)),
+        settings,
+        session.grainLock,
+        session.doubledGroups,
+      ),
+    // Picking a version must not recalculate.
+    [session?.parts, session?.excluded, session?.grainLock, session?.doubledGroups, settings],
   );
+  const result = versions?.find((v) => v.id === session?.version) ?? versions?.[0];
 
   return (
     <div className="min-h-screen">
@@ -65,11 +74,12 @@ export function App({ store }: { store: ProjectStore }) {
           <ImportPanel
             locale={locale}
             storedMap={() => store.loadColumnMap()}
-            onImport={({ parts, skipped, grainLock, map }) => {
+            onImport={({ parts, skipped, excluded, grainLock, map }) => {
               void store.saveColumnMap(map);
               changeSession({
                 parts,
                 skipped,
+                excluded,
                 grainLock,
                 doubledGroups: {},
                 timestamp: Date.now(),
@@ -83,6 +93,16 @@ export function App({ store }: { store: ProjectStore }) {
             onChange={changeSettings}
           />
           {session && (
+            <PartSelection
+              // A new import starts collapsed.
+              key={session.timestamp}
+              locale={locale}
+              parts={session.parts}
+              excluded={session.excluded ?? []}
+              onChange={(excluded) => changeSession({ ...session, excluded })}
+            />
+          )}
+          {session && (
             <Materials
               locale={locale}
               parts={session.parts}
@@ -91,6 +111,16 @@ export function App({ store }: { store: ProjectStore }) {
             />
           )}
         </div>
+        {session && versions && result && (
+          <div className="print:hidden">
+            <Versions
+              locale={locale}
+              versions={versions}
+              selected={result.id}
+              onSelect={(version) => changeSession({ ...session, version })}
+            />
+          </div>
+        )}
         {session && result && (
           <Results
             locale={locale}

@@ -2,16 +2,19 @@ import { useState } from 'react';
 import type { Result } from '../core/job';
 import type { SkippedRow } from '../core/parse';
 import { canDouble } from '../core/order';
-import type { Settings } from '../core/types';
+import type { Settings, Strip } from '../core/types';
 import { t, type Locale } from '../i18n';
 import { BoardView } from './BoardView';
+import { DataTable } from './DataTable';
 import { downloadCsv, downloadXlsx, toTsv } from './export';
-import { formatNumber } from './format';
+import { formatNumber, materialName } from './format';
+import { PrintPanel, PrintSheet, PRINT_SECTIONS, type PrintSection } from './Print';
 import { StripView } from './StripView';
+import { WhoDoesWhat } from './WhoDoesWhat';
 import { buildTable, type TableId } from './tables';
 
-type Tab = TableId | 'map';
-const TABS: Tab[] = ['order', 'finished', 'unbanded', 'map'];
+type Tab = TableId | 'map' | 'strips';
+const TABS: Tab[] = ['order', 'finished', 'unbanded', 'map', 'strips'];
 
 interface Props {
   locale: Locale;
@@ -24,28 +27,46 @@ interface Props {
 
 export function Results({ locale, settings, result, skipped, doubled, onDoubledChange }: Props) {
   const [tab, setTab] = useState<Tab>('order');
+  const [printed, setPrinted] = useState<PrintSection[]>([...PRINT_SECTIONS]);
   // Strip width can only be non-positive after classification, so it is listed here too.
   const tooThin = result.exceptions.filter((e) => e.reason === 'nonPositiveWidth');
   const skippedCount = skipped.length + tooThin.length;
-  const offered = new Set<string>();
   // Pairing needs two full-length strips of a group.
-  const fullStrips = new Map<string, number>();
+  const groups = new Map<string, Strip[]>();
   for (const strip of result.strips) {
-    if (!strip.flags.includes('short')) {
-      fullStrips.set(strip.groupKey, (fullStrips.get(strip.groupKey) ?? 0) + 1);
+    if (canDouble(strip, settings) && !strip.flags.includes('short')) {
+      groups.set(strip.groupKey, [...(groups.get(strip.groupKey) ?? []), strip]);
     }
   }
+  const pairable = [...groups].filter(([, strips]) => strips.length >= 2);
 
-  const cutMap = () => (
-    <>
-      <h3 className="pt-2 font-semibold">
-        {t(locale, 'boards.title', { n: result.boards.length })}
-      </h3>
-      <p className="text-sm">{t(locale, 'boards.note')}</p>
-      <p className="text-sm">
+  const who = () => <WhoDoesWhat locale={locale} settings={settings} result={result} />;
+
+  const legend = (
+    <p className="flex flex-wrap gap-4 text-sm">
+      <span>
         <span aria-hidden="true">﹏﹏ </span>
         {t(locale, 'boards.edgeBanding')}
-      </p>
+      </span>
+      <span>
+        <span aria-hidden="true" className="font-bold text-blue-700">━━ </span>
+        {t(locale, 'who.legendOrdered')}
+      </span>
+      <span>
+        <span aria-hidden="true" className="font-bold text-red-600">╍╍ </span>
+        {t(locale, 'who.legendCut')}
+      </span>
+    </p>
+  );
+
+  const boards = () => (
+    <>
+      <h3 className="pt-2 font-semibold">
+        {t(locale, 'boards.title', { n: result.boards.length })} ·{' '}
+        {t(locale, 'who.wholesalerCuts')}: {formatNumber(locale, result.cutLength / 1000, 2)} m
+      </h3>
+      <p className="text-sm">{t(locale, 'boards.note')}</p>
+      {legend}
       {result.boards.map((board, i) => (
         <BoardView
           key={i}
@@ -57,7 +78,11 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           strips={result.strips}
         />
       ))}
-      <h3 className="pt-2 font-semibold">{t(locale, 'preview.title')}</h3>
+    </>
+  );
+
+  const strips = () => (
+    <>
       {result.strips.map((strip, i) => (
         <StripView
           key={i}
@@ -94,35 +119,33 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           </details>
         )}
 
-        <section>
-          <h2 className="text-lg font-semibold">{t(locale, 'preview.title')}</h2>
-          {!result.proven && <p className="text-amber-700">{t(locale, 'preview.notProven')}</p>}
-          {result.strips.length === 0 && <p>{t(locale, 'results.empty')}</p>}
-          {result.strips.map((strip, i) => {
-            const offerPair =
-              canDouble(strip, settings) &&
-              (fullStrips.get(strip.groupKey) ?? 0) >= 2 &&
-              !offered.has(strip.groupKey);
-            if (offerPair) offered.add(strip.groupKey);
-            return (
-              <div key={i}>
-                {offerPair && (
-                  <label className="flex items-center gap-1 pt-2">
-                    <input
-                      type="checkbox"
-                      checked={doubled[strip.groupKey] ?? false}
-                      onChange={(event) =>
-                        onDoubledChange({ ...doubled, [strip.groupKey]: event.target.checked })
-                      }
-                    />
-                    {t(locale, 'preview.pair')}
-                  </label>
-                )}
-                <StripView locale={locale} settings={settings} strip={strip} number={i + 1} />
-              </div>
-            );
-          })}
-        </section>
+        {!result.proven && <p className="text-amber-700">{t(locale, 'preview.notProven')}</p>}
+
+        {pairable.length > 0 && (
+          <fieldset>
+            <legend className="font-semibold">{t(locale, 'preview.pair')}</legend>
+            {pairable.map(([key, [strip, ...others]]) => (
+              <label key={key} className="flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={doubled[key] ?? false}
+                  onChange={(event) => onDoubledChange({ ...doubled, [key]: event.target.checked })}
+                />
+                {[
+                  materialName(locale, strip!.material),
+                  `${t(locale, 'column.width')} ${formatNumber(locale, strip!.stripWidth)}`,
+                  strip!.thickness === null ? '' : `${formatNumber(locale, strip!.thickness)} mm`,
+                  strip!.crossCut ? t(locale, 'flag.acrossGrain') : '',
+                  `× ${others.length + 1}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </label>
+            ))}
+          </fieldset>
+        )}
+
+        <PrintPanel locale={locale} selected={printed} onChange={setPrinted} />
 
         <section>
           <div role="tablist" className="flex gap-1 border-b">
@@ -142,10 +165,13 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           <div role="tabpanel" className="py-2">
             {tab === 'map' ? (
               <>
-                <button type="button" className="btn" onClick={() => window.print()}>
-                  {t(locale, 'action.print')}
-                </button>
-                {cutMap()}
+                {who()}
+                {boards()}
+              </>
+            ) : tab === 'strips' ? (
+              <>
+                {legend}
+                {strips()}
               </>
             ) : (
               <TableTab key={tab} id={tab} locale={locale} settings={settings} result={result} />
@@ -154,11 +180,15 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
         </section>
       </div>
 
-      {/* The print layout is the cut map only, whichever tab is open. */}
-      <div className="hidden print:block">
-        <h1 className="text-lg font-semibold">{t(locale, 'tab.map')}</h1>
-        {cutMap()}
-      </div>
+      <PrintSheet
+        locale={locale}
+        settings={settings}
+        result={result}
+        selected={printed}
+        who={who}
+        boards={boards}
+        strips={strips}
+      />
     </>
   );
 }
@@ -201,26 +231,7 @@ function TableTab({
         </button>
       </div>
       <div className="w-full overflow-x-auto">
-        <table className="data">
-          <thead>
-            <tr>
-              {table.headers.map((header) => (
-                <th key={header}>{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {table.rows.map((row, i) => (
-              <tr key={i}>
-                {row.map((cell, j) => (
-                  <td key={j}>
-                    {typeof cell === 'number' ? formatNumber(locale, cell) : cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable locale={locale} table={table} />
       </div>
       {table.rows.length === 0 && <p>{t(locale, 'results.empty')}</p>}
     </div>

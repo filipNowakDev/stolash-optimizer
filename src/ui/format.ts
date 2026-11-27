@@ -33,13 +33,22 @@ export function cutSequence(locale: Locale, strip: Strip, settings: Settings): s
 
 /** Consecutive pieces with the same name collapse to "name × n". */
 export function pieceList(locale: Locale, strip: Strip): string[] {
-  const runs: { name: string; length: number; count: number }[] = [];
+  const runs: { name: string; length: number; width: number; count: number }[] = [];
   for (const piece of strip.pieces) {
     const last = runs[runs.length - 1];
-    if (last && last.name === piece.name && last.length === piece.length) last.count++;
+    if (last && last.name === piece.name && last.length === piece.length && last.width === piece.width) last.count++;
     else runs.push({ ...piece, count: 1 });
   }
-  return runs.map(({ name, length, count }) =>
-    [name, formatNumber(locale, length), count > 1 ? `× ${count}` : ''].filter(Boolean).join(' '),
+  return runs.map(({ name, length, width, count }) =>
+    [
+      name,
+      formatNumber(locale, length),
+      count > 1 ? `× ${count}` : '',
+      width < strip.stripWidth
+        ? `(${t(locale, 'preview.ripTo', { w: formatNumber(locale, width) })})`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' '),
   );
 }

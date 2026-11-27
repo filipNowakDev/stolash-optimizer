@@ -17,10 +17,12 @@ import {
 import type { Edge, Part } from '../core/types';
 import { t, type Locale } from '../i18n';
 import { Materials, suggestedGrain } from './Materials';
+import { PartSelection } from './PartSelection';
 
 export interface Imported {
   parts: Part[];
   skipped: SkippedRow[];
+  excluded: number[];
   grainLock: Record<string, boolean>;
   map: ColumnMap;
 }
@@ -51,11 +53,13 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [empty, setEmpty] = useState(false);
   const [grain, setGrain] = useState<Record<string, boolean>>({});
+  const [excluded, setExcluded] = useState<number[]>([]);
 
   const load = (text: string, encoding: Encoding | null) => {
     const table = readTable(text);
     setEmpty(table.rows.length === 0);
     setGrain({});
+    setExcluded([]);
     setDraft(
       table.rows.length === 0 ? null : { table, encoding, ...proposeMap(table, storedMap()) },
     );
@@ -73,8 +77,11 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
   );
   const grainLock = parsed ? suggestedGrain(parsed.parts, grain) : {};
 
-  const setMap = (change: Partial<ColumnMap>) =>
+  const setMap = (change: Partial<ColumnMap>) => {
+    // A new mapping can drop or shift rows, so the old selection no longer fits.
+    setExcluded([]);
     setDraft((d) => d && { ...d, map: { ...d.map, ...change } });
+  };
 
   return (
     <section className="flex flex-col gap-3">
@@ -210,6 +217,13 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
                 grainLock={grainLock}
                 onChange={setGrain}
               />
+              <PartSelection
+                locale={locale}
+                parts={parsed.parts}
+                excluded={excluded}
+                onChange={setExcluded}
+                open
+              />
               {parsed.skipped.length > 0 && (
                 <p>{t(locale, 'results.skipped', { n: parsed.skipped.length })}</p>
               )}
@@ -222,9 +236,9 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
             <button
               type="button"
               className="btn font-semibold"
-              disabled={!parsed}
+              disabled={!parsed || excluded.length === parsed.parts.length}
               onClick={() => {
-                onImport({ ...parsed!, grainLock, map: draft.map });
+                onImport({ ...parsed!, excluded, grainLock, map: draft.map });
                 setDraft(null);
                 setPaste('');
               }}

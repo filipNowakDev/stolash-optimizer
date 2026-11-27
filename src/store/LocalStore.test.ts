@@ -14,7 +14,7 @@ describe('LocalStore', () => {
     const store = new LocalStore(localStorage);
     await store.saveSettings({ ...FACTORY_SETTINGS, sawKerf: 4 });
     await store.saveLocale('pl');
-    await store.saveSession({ parts: [], skipped: [], grainLock: {}, doubledGroups: {}, timestamp: 1 });
+    await store.saveSession({ parts: [], skipped: [], excluded: [], grainLock: {}, doubledGroups: {}, timestamp: 1 });
 
     await store.clearSession();
 

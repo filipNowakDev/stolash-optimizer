@@ -8,6 +8,10 @@ export type { ColumnMap };
 export interface Session {
   parts: Part[];
   skipped: SkippedRow[];
+  /** Indexes into parts that the user left out. */
+  excluded: number[];
+  /** The chosen way of cutting; the first one when absent. */
+  version?: string;
   grainLock: Record<string, boolean>;
   doubledGroups: Record<string, boolean>;
   timestamp: number;

@@ -20,13 +20,23 @@ export interface Settings {
   maxWidth: number;
   sawKerf: number;
   trimAllowance: number;
-  dimensionsIncludeEdge: boolean;
+  /**
+   * Order narrower than the file by the banding. Off by default: the wholesaler
+   * mills the edge by that amount before gluing.
+   */
+  subtractEdge: boolean;
   defaultEdgeThickness: number;
   /** null until the user edits it; the UI then generates it from locale and thickness. */
   defaultEdgeLabel: string | null;
   minStripWidth: number;
+  /** Order a poorly filled strip shorter than the board. */
+  shortStrips: boolean;
   shortStripRatio: number;
   orderDecimals: number;
+  /** Put narrower parts on wider strips when that orders less material. */
+  fitNarrower: boolean;
+  /** A leftover with both sides at least this long counts as reusable. */
+  minOffcut: number;
 }
 
 /** null means "take it from settings", so a settings change applies to parsed parts. */
@@ -61,7 +71,6 @@ export interface Candidate {
   /** undefined when at most L1 is banded. */
   edgeL2: EdgeLabel | undefined;
   edgeThickness: number;
-  acrossGrain: boolean;
   /** Ripped across the board to keep the grain, so no longer than the board is wide. */
   crossCut: boolean;
 }
@@ -74,6 +83,8 @@ export interface PartException {
 export interface StripPiece {
   name: string;
   length: number;
+  /** Board width of the part. Less than the strip width means the shop rips it. */
+  width: number;
 }
 
 export interface Strip {

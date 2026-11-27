@@ -6,12 +6,15 @@ export const FACTORY_SETTINGS: Readonly<Settings> = {
   maxWidth: 2030,
   sawKerf: 3.2,
   trimAllowance: 10,
-  dimensionsIncludeEdge: true,
+  subtractEdge: false,
   defaultEdgeThickness: 0.8,
   defaultEdgeLabel: null,
   minStripWidth: 70,
+  shortStrips: false,
   shortStripRatio: 0.4,
   orderDecimals: 1,
+  fitNarrower: true,
+  minOffcut: 300,
 };
 
 /** The longest and widest strip a board gives, in the direction the strip is ripped. */

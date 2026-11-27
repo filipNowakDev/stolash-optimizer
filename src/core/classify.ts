@@ -22,7 +22,6 @@ function classifyUnbanded(part: Part, settings: Settings): Candidate | ReasonId 
     edgeL1: undefined,
     edgeL2: undefined,
     edgeThickness: 0,
-    acrossGrain: false,
     crossCut: false,
   };
 }
@@ -43,13 +42,15 @@ function classifyPart(part: Part, settings: Settings, grainLock: boolean): Candi
     return 'mixedEdgeProducts';
   }
 
-  const acrossGrain = alongGrain === 0;
-  // Keeping the grain means the strip itself must run across the board.
-  const crossCut = acrossGrain && grainLock;
+  // Banding on the width turns the part, so its width lies along the strip.
+  const turned = alongGrain === 0;
+  // Keeping the grain then means the strip itself must run across the board.
+  // Without grain the direction does not matter, and it is a strip like any other.
+  const crossCut = turned && grainLock;
 
-  const pieceLength = acrossGrain ? part.width : part.length;
-  const perpendicular = acrossGrain ? part.length : part.width;
-  const exact = settings.dimensionsIncludeEdge
+  const pieceLength = turned ? part.width : part.length;
+  const perpendicular = turned ? part.length : part.width;
+  const exact = settings.subtractEdge
     ? perpendicular - edges.length * product.thickness
     : perpendicular;
   const boardWidth = round(exact, settings.orderDecimals);
@@ -63,7 +64,6 @@ function classifyPart(part: Part, settings: Settings, grainLock: boolean): Candi
     edgeL1: product.label,
     edgeL2: edges.length === 2 ? product.label : undefined,
     edgeThickness: product.thickness,
-    acrossGrain,
     crossCut,
   };
 }

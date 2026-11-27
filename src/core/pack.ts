@@ -1,5 +1,6 @@
 // Pure: no DOM, storage or dictionaries (PRD section 15).
 import { binPack } from './binpack';
+import { fillNarrower } from './fill';
 import { boardSize } from './settings';
 import type { Candidate, PartException, Settings, Strip, StripFlag, StripPiece } from './types';
 
@@ -19,7 +20,6 @@ export function groupKey(c: Candidate): string {
     c.edgeL2 === undefined ? false : c.edgeL2,
     c.boardWidth,
     c.edgeThickness,
-    c.acrossGrain,
     c.crossCut,
   ]);
 }
@@ -29,7 +29,7 @@ const um = (mm: number) => Math.round(mm * 1000);
 
 /** PRD section 13. */
 export function pack(candidates: Candidate[], settings: Settings): PackResult {
-  const { sawKerf, trimAllowance, shortStripRatio, minStripWidth } = settings;
+  const { sawKerf, trimAllowance, shortStrips, shortStripRatio, minStripWidth } = settings;
   const kerf = um(sawKerf);
   const result: PackResult = { strips: [], exceptions: [], proven: true };
 
@@ -49,13 +49,14 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
     const head = group[0]!;
     const boardLength = boardSize(settings, head.crossCut).length;
     const usable = um(boardLength - trimAllowance);
-    const isShort = (used: number) => used < shortStripRatio * usable - 1e-6;
+    const isShort = (used: number) => shortStrips && used < shortStripRatio * usable - 1e-6;
     const orderUm = (used: number) =>
       isShort(used) ? used + um(trimAllowance) : um(boardLength);
     const pieces: StripPiece[] = group.flatMap((c) =>
       Array.from({ length: c.part.quantity }, () => ({
         name: c.part.name,
         length: c.pieceLength,
+        width: c.boardWidth,
       })),
     );
     // Stable sort: equal length and name keep their input order.
@@ -68,7 +69,7 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
       const flags: StripFlag[] = [];
       if (short) flags.push('short');
       if (head.boardWidth < minStripWidth) flags.push('narrow');
-      if (head.acrossGrain) flags.push('acrossGrain');
+      if (head.crossCut) flags.push('acrossGrain');
       if (trimTight) flags.push('trimTight');
       result.strips.push({
         groupKey: key,
@@ -103,5 +104,6 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
     for (const bin of bins) addStrip(bin, false);
   }
 
+  if (settings.fitNarrower) result.strips = fillNarrower(result.strips, settings);
   return result;
 }

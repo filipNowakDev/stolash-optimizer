@@ -296,9 +296,11 @@ export function parseRows(table: Table, map: ColumnMap): { parts: Part[]; skippe
   return { parts, skipped };
 }
 
+// Matched anywhere in the normalized name. Polish words are stems, so every gender
+// and case matches: biały, biała, białe.
 const PLAIN_MATERIALS = [
-  'bialy', 'szary', 'czarny', 'uni', 'jednolity', 'kolor', 'white', 'grey', 'gray', 'black',
-  'solid', 'color', 'colour', 'lustro', 'mirror', 'szklo', 'glass',
+  'bial', 'szar', 'czarn', 'gladk', 'uni', 'jednolit', 'kolor', 'white', 'grey', 'gray', 'black',
+  'solid', 'color', 'colour', 'lustr', 'mirror', 'szkl', 'glass',
 ];
 
 /** Suggested "Keep grain direction" for a material name. */

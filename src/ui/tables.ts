@@ -14,6 +14,16 @@ export interface Table {
 
 export type TableId = 'order' | 'finished' | 'unbanded';
 
+export function describeEdges(locale: Locale, part: Part): string {
+  return (Object.keys(part.edges) as Edge[])
+    .map((edge) => {
+      const label = part.edges[edge]!.label;
+      const name = t(locale, `edge.${edge}`);
+      return label ? `${name} (${label})` : name;
+    })
+    .join(', ');
+}
+
 export function buildTable(
   id: TableId,
   result: Result,
@@ -64,13 +74,7 @@ export function buildTable(
     headers: headers(...columns, 'column.edges', 'column.reason'),
     rows: result.exceptions.map(({ part, reason }) => [
       ...cells(part),
-      (Object.keys(part.edges) as Edge[])
-        .map((edge) => {
-          const label = part.edges[edge]!.label;
-          const name = t(locale, `edge.${edge}`);
-          return label ? `${name} (${label})` : name;
-        })
-        .join(', '),
+      describeEdges(locale, part),
       t(locale, `reason.${reason}`),
     ]),
   };

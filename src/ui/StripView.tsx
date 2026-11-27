@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { Settings, Strip } from '../core/types';
 import { t, type Locale } from '../i18n';
-import { Hatch, Piece } from './drawing';
+import { crossCuts, Hatch, Ordered, OwnCut, Piece } from './drawing';
 import { cutSequence, edgeName, formatNumber, materialName, pieceList } from './format';
 
 interface Props {
@@ -37,6 +37,11 @@ export function StripView({ locale, settings, strip, number, withPieceList }: Pr
   return (
     <article className="break-inside-avoid py-2">
       <p className="text-sm font-medium">{heading.filter(Boolean).join(' · ')}</p>
+      <p className="text-sm">
+        {t(locale, strip.flags.includes('doubled') ? 'who.stripDoubled' : 'who.strip', {
+          n: strip.pieces.length,
+        })}
+      </p>
       <svg viewBox={`-4 -4 ${settings.maxLength + 8} ${height + 8}`} width="100%">
         <defs>
           <Hatch id={hatch} />
@@ -46,19 +51,29 @@ export function StripView({ locale, settings, strip, number, withPieceList }: Pr
         {strip.pieces.map((piece, i) => {
           const x = position;
           position += piece.length + settings.sawKerf;
+          const drawn = (piece.width / strip.stripWidth) * height;
           return (
-            <Piece
-              key={i}
-              x={x}
-              length={piece.length}
-              height={height}
-              name={piece.name}
-              lengthText={mm(piece.length)}
-              widthText={mm(strip.stripWidth)}
-              banded={strip.edgeL2 !== undefined ? 2 : strip.edgeL1 !== undefined ? 1 : 0}
-            />
+            <g key={i}>
+              <Piece
+                x={x}
+                y={height - drawn}
+                length={piece.length}
+                height={drawn}
+                name={piece.name}
+                lengthText={mm(piece.length)}
+                widthText={mm(piece.width)}
+                banded={strip.edgeL2 !== undefined ? 2 : strip.edgeL1 !== undefined ? 1 : 0}
+              />
+              {drawn < height && (
+                <OwnCut x1={x} y1={height - drawn} x2={x + piece.length} y2={height - drawn} />
+              )}
+            </g>
           );
         })}
+        <Ordered length={strip.orderLength} height={height} />
+        {crossCuts(strip.pieces, settings.sawKerf, strip.orderLength).map((x) => (
+          <OwnCut key={x} x1={x} y1={0} x2={x} y2={height} />
+        ))}
       </svg>
       <p className="text-sm">
         {cutSequence(locale, strip, settings)} · {t(locale, 'preview.offcut')} {mm(strip.offcut)}

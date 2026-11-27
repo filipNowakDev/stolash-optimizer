@@ -11,6 +11,7 @@ const FIELDS: { field: NumericField; mm: boolean }[] = [
   { field: 'trimAllowance', mm: true },
   { field: 'defaultEdgeThickness', mm: true },
   { field: 'minStripWidth', mm: true },
+  { field: 'minOffcut', mm: true },
   { field: 'shortStripRatio', mm: false },
   { field: 'orderDecimals', mm: false },
 ];
@@ -45,7 +46,8 @@ export function SettingsPanel({ locale, settings, onChange }: Props) {
               <span className="flex items-center gap-1">
                 <input
                   inputMode="decimal"
-                  className="w-32 rounded border px-2 py-1 aria-invalid:border-red-700"
+                  disabled={field === 'shortStripRatio' && !settings.shortStrips}
+                  className="w-32 rounded border px-2 py-1 aria-invalid:border-red-700 disabled:opacity-50"
                   aria-invalid={invalid !== null}
                   value={text}
                   onChange={(event) => {
@@ -80,12 +82,28 @@ export function SettingsPanel({ locale, settings, onChange }: Props) {
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
-            checked={settings.dimensionsIncludeEdge}
+            checked={settings.subtractEdge}
             onChange={(event) =>
-              onChange({ ...settings, dimensionsIncludeEdge: event.target.checked })
+              onChange({ ...settings, subtractEdge: event.target.checked })
             }
           />
-          {t(locale, 'settings.dimensionsIncludeEdge')}
+          {t(locale, 'settings.subtractEdge')}
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.shortStrips}
+            onChange={(event) => onChange({ ...settings, shortStrips: event.target.checked })}
+          />
+          {t(locale, 'settings.shortStrips')}
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.fitNarrower}
+            onChange={(event) => onChange({ ...settings, fitNarrower: event.target.checked })}
+          />
+          {t(locale, 'settings.fitNarrower')}
         </label>
       </div>
     </section>

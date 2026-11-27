@@ -11,6 +11,24 @@ export function Banding({ length, y }: { length: number; y: number }) {
   return <path d={path} fill="none" stroke="#111827" strokeWidth="3" />;
 }
 
+/** A cut made in the shop. Dashed, so it survives black and white printing. */
+export function OwnCut({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
+  return (
+    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#dc2626" strokeWidth="14" strokeDasharray="36 22" />
+  );
+}
+
+/** The outline of what the wholesaler delivers. */
+export function Ordered({ y = 0, length, height }: { y?: number; length: number; height: number }) {
+  return <rect y={y} width={length} height={height} fill="none" stroke="#1d4ed8" strokeWidth="14" />;
+}
+
+/** Where the shop crosscuts a strip of the given order length. */
+export function crossCuts(pieces: { length: number }[], kerf: number, orderLength: number) {
+  let end = -kerf;
+  return pieces.map((p) => (end += p.length + kerf)).filter((x) => x < orderLength - 1e-6);
+}
+
 export function Hatch({ id }: { id: string }) {
   return (
     <pattern id={id} width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -22,6 +40,7 @@ export function Hatch({ id }: { id: string }) {
 
 interface PieceProps {
   x: number;
+  y?: number;
   /** Drawn size. The length runs along the strip. */
   length: number;
   height: number;
@@ -34,11 +53,11 @@ interface PieceProps {
 }
 
 /** A part: length on top with its edge mark, width on the left, name bottom right. */
-export function Piece({ x, length, height, name, lengthText, widthText, banded }: PieceProps) {
+export function Piece({ x, y = 0, length, height, name, lengthText, widthText, banded }: PieceProps) {
   const font = Math.min(52, height / 3.4, length / 4.5);
   const mark = ['', '-', '='][banded];
   return (
-    <svg x={x} width={length} height={height}>
+    <svg x={x} y={y} width={length} height={height}>
       <title>{`${name} ${lengthText} × ${widthText}`.trim()}</title>
       <rect width="100%" height="100%" fill={banded ? '#d9ead3' : '#d6deef'} stroke="#111827" strokeWidth="5" />
       {banded > 0 && <Banding length={length} y={height - 14} />}
@@ -53,7 +72,13 @@ export function Piece({ x, length, height, name, lengthText, widthText, banded }
           <text x="14" y={height / 2 + font / 3}>
             {widthText}
           </text>
-          <text x={length - 14} y={height - 26} textAnchor="end">
+          {/* Long names shrink instead of running off a small part. */}
+          <text
+            x={length - 14}
+            y={height - 26}
+            textAnchor="end"
+            fontSize={Math.min(font, (length - 28) / (name.length * 0.55))}
+          >
             {name}
           </text>
         </g>
