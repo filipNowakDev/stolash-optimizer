@@ -72,25 +72,33 @@ export function PrintSheet({
   result: Result;
   selected: PrintSection[];
   who: () => ReactNode;
-  boards: () => ReactNode;
-  strips: () => ReactNode;
+  boards: (heading: ReactNode) => ReactNode;
+  strips: (heading: ReactNode) => ReactNode;
 }) {
   return (
     <div className="hidden print:block" aria-hidden="true" data-testid="print-sheet">
-      {selected.map((id) => (
-        <section key={id} className="not-first:break-before-page">
-          <h2 className="text-lg font-semibold">{t(locale, LABELS[id])}</h2>
-          {id === 'who' ? (
-            who()
-          ) : id === 'boards' ? (
-            boards()
-          ) : id === 'strips' ? (
-            strips()
-          ) : (
-            <DataTable locale={locale} table={buildTable(id, result, settings, locale)} />
-          )}
-        </section>
-      ))}
+      {selected.map((id) => {
+        const heading = <h2 className="text-lg font-semibold">{t(locale, LABELS[id])}</h2>;
+        // Drawing sections span pages; they keep their heading with the first drawing.
+        if (id === 'boards' || id === 'strips') {
+          return (
+            <section key={id} className="not-first:mt-6">
+              {id === 'boards' ? boards(heading) : strips(heading)}
+            </section>
+          );
+        }
+        // Shorter sections move to the next page whole when they do not fit.
+        return (
+          <section key={id} className="break-inside-avoid not-first:mt-6">
+            {heading}
+            {id === 'who' ? (
+              who()
+            ) : (
+              <DataTable locale={locale} table={buildTable(id, result, settings, locale)} />
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

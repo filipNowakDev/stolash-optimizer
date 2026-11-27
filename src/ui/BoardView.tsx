@@ -32,7 +32,7 @@ export function BoardView({ locale, settings, board, number, total, strips }: Pr
   ];
 
   return (
-    <figure className="max-w-4xl break-inside-avoid py-3">
+    <figure className="max-w-4xl break-inside-avoid py-3 print:max-w-[160mm] print:py-1">
       <svg viewBox={`-4 -4 ${maxLength + 8} ${maxWidth + 8}`} width="100%">
         <defs>
           <Hatch id={hatch} />

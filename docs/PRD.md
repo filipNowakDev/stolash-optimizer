@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 3.3 |
+| Document version | 3.4 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -556,7 +556,7 @@ The wholesaler delivers every strip, banded or not, and the elements that come w
 
 ### Print
 
-A print panel above the results has a checkbox each for who does what, strip order, finished parts, no banding, board drawings and strip drawings, all ticked by default, and one "Print" button that calls `window.print()`. The print layout is A4 portrait and holds only the ticked sections, each starting on a new page. The browser's own print command prints the same. The user saves PDF from the browser print dialog. Printed labels use the active language.
+A print panel above the results has a checkbox each for who does what, strip order, finished parts, no banding, board drawings and strip drawings, all ticked by default, and one "Print" button that calls `window.print()`. The print layout is A4 portrait and holds only the ticked sections. Sections share a page when they fit: a summary or table moves to the next page whole rather than splitting, drawing sections may span pages without splitting a drawing or leaving a heading behind, and boards are printed narrow enough for two on a page. The browser's own print command prints the same. The user saves PDF from the browser print dialog. Printed labels use the active language.
 
 ### Session
 

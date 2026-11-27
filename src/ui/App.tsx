@@ -192,7 +192,7 @@ export function App({ store }: { store: ProjectStore }) {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen print:min-h-0">
       <header className="border-b border-slate-200 bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <h1 className="text-xl font-semibold tracking-tight">
@@ -219,7 +219,7 @@ export function App({ store }: { store: ProjectStore }) {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 print:max-w-none print:p-0">
+      <main className="mx-auto flex max-w-6xl flex-col gap-6 p-4 print:block print:max-w-none print:p-0">
         <div className="flex flex-col gap-6 print:hidden">
           <section className="card">
             <h2 className="step">
