@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 3.0 |
+| Document version | 3.1 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -85,9 +85,9 @@ Acceptance at delivery: the scenarios in section 17 produce the numbers in this 
 
 1. The user drops a file or pastes a table.
 2. The app detects encoding and delimiter, shows the first rows, and proposes a column map.
-3. The user confirms the map. Each material shows "Keep grain direction", suggested from the material name. Every parsed row is listed with a checkbox, and only ticked rows go into the result.
-4. The app classifies parts, packs strip candidates, and draws the result.
-5. The user edits global parameters. The result recalculates from the parsed parts.
+3. The user checks the setup tabs: which elements to include, "Keep grain direction" per material (suggested from the name), parameters, and the column map.
+4. "Generate cut lists" classifies the parts, packs strips and draws the result.
+5. A later change leaves the shown result alone, marks it out of date, and turns the button into "Update cut lists".
 6. The user copies the order, downloads CSV or XLSX, or prints the lists and drawings.
 
 A new import replaces the current part list. Parameters, the column map, and the language stay.
@@ -171,7 +171,7 @@ Usable length:
 L_eff = maxLength - trimAllowance
 ```
 
-Any valid change recalculates from the parts already parsed and is saved immediately. An invalid value is not saved and does not recalculate. The reason shows on that field.
+Any valid change is saved immediately and takes effect at the next generation. An invalid value is not saved. The reason shows on that field.
 
 Grain lock per material and "pair into a double strip" are session choices, stored with the session, not in the workshop settings. The name heuristic only suggests the grain checkbox. The stored choice wins on reload.
 
@@ -488,17 +488,30 @@ One page. Layout aimed at a wide shop monitor. A narrow window may scroll tables
 
 The header shows the product name and a menu button. The menu contains the language control (section 7), "Reset preferences", and "Clear session".
 
-### Import
+The page is three numbered steps in cards:
 
-A large drop zone and a paste area with a load button. After load: detected encoding, delimiter, row count, preview of the first 5 rows, column map, the one-column edge value table when that mode is active, and the material list with the grain checkbox.
+1. **Import.** A drop zone and a paste area. After load: row count, profile, encoding and skipped count.
+2. **Set up**, in tabs: Elements, Materials, Board and saw (`maxLength`, `maxWidth`, `sawKerf`, `trimAllowance`), Edge banding (`defaultEdgeThickness`, `defaultEdgeLabel`, `subtractEdge`), Optimisation (the other settings), and Columns (encoding, delimiter, preview of the first 5 rows, column map, one-column edge value table). The parameter tabs work without a file. The Columns tab needs the file in memory, so after a reload it asks for the file again.
+3. **Results**, shown once generated: the versions table, then the result tabs.
+
+Under all the settings, and kept in view while scrolling, is one button with a line of explanation:
+
+| State | Button |
+|---|---|
+| No file, or no element ticked | "Generate cut lists", disabled |
+| Not generated yet | "Generate cut lists" |
+| Elements, materials or parameters differ from the last generation | "Update cut lists" |
+| Nothing differs | "Up to date", disabled |
+
+The shown result is always calculated from the inputs of the last generation. Choosing a version, pairing double strips and switching language act on it directly. A column map change reads the table again and needs a new generation.
 
 ### Element selection
 
-Every parsed row is listed with name, material, dimensions, quantity, edges and a checkbox, all ticked by default, with "Select all" and "Select none". It is shown before confirming the import and stays available, collapsed, afterwards. A row is included or left out with its whole quantity. The choice is stored in the session. Changing the column map ticks everything again.
+Every parsed row is listed with name, material, dimensions, quantity, edges and a checkbox, all ticked by default, with "Select all" and "Select none". It is the first setup tab. A row is included or left out with its whole quantity. The choice is stored in the session. Changing the column map ticks everything again.
 
 ### Parameters
 
-The fields from section 8, with mm beside each length. An invalid value does not recalculate and shows the reason on the field.
+The fields from section 8, with mm beside each length. An invalid value is not saved and shows the reason on the field.
 
 ### Strip drawings
 
@@ -547,7 +560,7 @@ A print panel above the results has a checkbox each for who does what, strip ord
 
 ### Session
 
-`stolash.session.v1` stores the parsed parts, grain choices, double-strip toggles, and a timestamp. Reload restores the last result. "Clear session" removes that key and keeps settings, the column map, and the language.
+`stolash.session.v1` stores the parsed parts, grain choices, double-strip toggles, and a timestamp. Reload restores the last generated result and the inputs. "Clear session" removes that key and keeps settings, the column map, and the language.
 
 ## 15. GitHub Pages architecture
 

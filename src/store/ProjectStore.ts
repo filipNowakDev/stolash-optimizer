@@ -5,6 +5,13 @@ import type { Locale } from '../i18n';
 
 export type { ColumnMap };
 
+/** The inputs the shown results were generated from. */
+export interface Snapshot {
+  settings: Settings;
+  excluded: number[];
+  grainLock: Record<string, boolean>;
+}
+
 export interface Session {
   parts: Part[];
   skipped: SkippedRow[];
@@ -15,6 +22,8 @@ export interface Session {
   grainLock: Record<string, boolean>;
   doubledGroups: Record<string, boolean>;
   timestamp: number;
+  /** null until Generate is pressed. */
+  generated?: Snapshot | null;
 }
 
 export interface ProjectStore {

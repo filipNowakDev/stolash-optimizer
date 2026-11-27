@@ -17,25 +17,20 @@ export const suggestedGrain = (parts: Part[], chosen: Record<string, boolean> = 
 
 export function Materials({ locale, parts, grainLock, onChange }: Props) {
   return (
-    <fieldset>
-      <legend className="font-semibold">{t(locale, 'import.materials')}</legend>
-      <ul>
-        {[...new Set(parts.map((p) => p.material))].map((material) => (
-          <li key={material} className="flex gap-4">
-            <span className="w-64">{materialName(locale, material)}</span>
-            <label className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={grainLock[material] ?? true}
-                onChange={(event) =>
-                  onChange({ ...grainLock, [material]: event.target.checked })
-                }
-              />
-              {t(locale, 'import.keepGrain')}
-            </label>
-          </li>
-        ))}
-      </ul>
-    </fieldset>
+    <ul className="divide-y divide-slate-100">
+      {[...new Set(parts.map((p) => p.material))].map((material) => (
+        <li key={material} className="flex flex-wrap items-center gap-4 py-2">
+          <span className="w-72 text-sm font-medium">{materialName(locale, material)}</span>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={grainLock[material] ?? true}
+              onChange={(event) => onChange({ ...grainLock, [material]: event.target.checked })}
+            />
+            {t(locale, 'import.keepGrain')}
+          </label>
+        </li>
+      ))}
+    </ul>
   );
 }

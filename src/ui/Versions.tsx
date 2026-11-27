@@ -45,7 +45,7 @@ export function Versions({ locale, versions, selected, onSelect }: Props) {
 
   return (
     <fieldset className="overflow-x-auto">
-      <legend className="font-semibold">{t(locale, 'versions.title')}</legend>
+      <legend className="mb-2 font-semibold">{t(locale, 'versions.title')}</legend>
       <table className="data">
         <thead>
           <tr>
@@ -62,7 +62,7 @@ export function Versions({ locale, versions, selected, onSelect }: Props) {
         </thead>
         <tbody>
           {rows.map((version) => (
-            <tr key={version.id} className={version.id === selected ? 'bg-blue-50' : undefined}>
+            <tr key={version.id} className={version.id === selected ? 'bg-indigo-50' : undefined}>
               <td>
                 <label className="flex items-center gap-2">
                   <input

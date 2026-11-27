@@ -27,10 +27,10 @@ export function PrintPanel({
   onChange: (selected: PrintSection[]) => void;
 }) {
   return (
-    <fieldset className="flex flex-wrap items-center gap-4">
-      <legend className="font-semibold">{t(locale, 'print.title')}</legend>
+    <fieldset className="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 p-3">
+      <legend className="sr-only">{t(locale, 'print.title')}</legend>
       {PRINT_SECTIONS.map((id) => (
-        <label key={id} className="flex items-center gap-1">
+        <label key={id} className="check">
           <input
             type="checkbox"
             checked={selected.includes(id)}
@@ -47,7 +47,7 @@ export function PrintPanel({
       ))}
       <button
         type="button"
-        className="btn font-semibold"
+        className="btn btn-primary ml-auto"
         disabled={selected.length === 0}
         onClick={() => window.print()}
       >

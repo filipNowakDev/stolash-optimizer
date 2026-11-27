@@ -1,33 +1,18 @@
-import { useMemo, useState } from 'react';
 import {
-  decodeFile,
   isMapComplete,
   normalize,
-  parseRows,
-  proposeMap,
-  readTable,
   ROLES,
   type ColumnMap,
   type EdgeMode,
   type Encoding,
   type Role,
-  type SkippedRow,
   type Table,
 } from '../core/parse';
-import type { Edge, Part } from '../core/types';
+import type { Edge } from '../core/types';
 import { t, type Locale } from '../i18n';
-import { Materials, suggestedGrain } from './Materials';
-import { PartSelection } from './PartSelection';
 
-export interface Imported {
-  parts: Part[];
-  skipped: SkippedRow[];
-  excluded: number[];
-  grainLock: Record<string, boolean>;
-  map: ColumnMap;
-}
-
-interface Draft {
+/** A loaded table and how its columns are read. Not persisted. */
+export interface Draft {
   table: Table;
   encoding: Encoding | null;
   map: ColumnMap;
@@ -42,96 +27,27 @@ const MODE_ROLES: Record<EdgeMode, Role[]> = {
 const COMMON: Role[] = ['name', 'material', 'length', 'width', 'thickness', 'quantity'];
 const EDGES: Edge[] = ['left', 'right', 'top', 'bottom'];
 
-interface Props {
+export function ColumnsTab({
+  locale,
+  draft,
+  onChange,
+}: {
   locale: Locale;
-  storedMap: () => ColumnMap | null;
-  onImport: (imported: Imported) => void;
-}
-
-export function ImportPanel({ locale, storedMap, onImport }: Props) {
-  const [paste, setPaste] = useState('');
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const [empty, setEmpty] = useState(false);
-  const [grain, setGrain] = useState<Record<string, boolean>>({});
-  const [excluded, setExcluded] = useState<number[]>([]);
-
-  const load = (text: string, encoding: Encoding | null) => {
-    const table = readTable(text);
-    setEmpty(table.rows.length === 0);
-    setGrain({});
-    setExcluded([]);
-    setDraft(
-      table.rows.length === 0 ? null : { table, encoding, ...proposeMap(table, storedMap()) },
-    );
-  };
-
-  const loadFile = async (file: File | undefined) => {
-    if (!file) return;
-    const { text, encoding } = decodeFile(await file.arrayBuffer());
-    load(text, encoding);
-  };
-
-  const parsed = useMemo(
-    () => (draft && isMapComplete(draft.map) ? parseRows(draft.table, draft.map) : null),
-    [draft],
-  );
-  const grainLock = parsed ? suggestedGrain(parsed.parts, grain) : {};
-
-  const setMap = (change: Partial<ColumnMap>) => {
-    // A new mapping can drop or shift rows, so the old selection no longer fits.
-    setExcluded([]);
-    setDraft((d) => d && { ...d, map: { ...d.map, ...change } });
-  };
+  draft: Draft;
+  onChange: (map: ColumnMap) => void;
+}) {
+  const setMap = (change: Partial<ColumnMap>) => onChange({ ...draft.map, ...change });
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">{t(locale, 'import.title')}</h2>
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <label
-          className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded border-2 border-dashed p-8"
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            void loadFile(event.dataTransfer.files[0]);
-          }}
-        >
-          {t(locale, 'import.drop')}
-          <input
-            type="file"
-            accept=".csv,.txt"
-            className="sr-only"
-            onChange={(event) => {
-              void loadFile(event.target.files?.[0]);
-              // Lets the same file be chosen again.
-              event.target.value = '';
-            }}
-          />
-        </label>
-        <div className="flex flex-1 flex-col items-start gap-2">
-          <textarea
-            className="h-24 w-full rounded border p-2 font-mono text-sm"
-            aria-label={t(locale, 'import.paste')}
-            placeholder={t(locale, 'import.pastePlaceholder')}
-            value={paste}
-            onChange={(event) => setPaste(event.target.value)}
-          />
-          <button type="button" className="btn" onClick={() => load(paste, null)}>
-            {t(locale, 'import.load')}
-          </button>
-        </div>
-      </div>
-      {empty && <p className="text-red-700">{t(locale, 'import.empty')}</p>}
-
-      {draft && (
-        <div className="flex flex-col gap-3 rounded border p-3">
-          <p className="text-sm">
-            {t(locale, 'import.encoding')}: {draft.encoding ?? t(locale, 'import.clipboard')} ·{' '}
-            {t(locale, 'import.delimiter')}:{' '}
-            {draft.table.delimiter === '\t' ? t(locale, 'import.tab') : draft.table.delimiter} ·{' '}
-            {t(locale, 'import.rows')}: {draft.table.rows.length}
-            {draft.formatek && <strong> · {t(locale, 'import.profile')}</strong>}
-          </p>
-
+    <div className="flex flex-col items-start gap-4">
+      <p className="muted">
+        {t(locale, 'import.encoding')}: {draft.encoding ?? t(locale, 'import.clipboard')} ·{' '}
+        {t(locale, 'import.delimiter')}:{' '}
+        {draft.table.delimiter === '\t' ? t(locale, 'import.tab') : draft.table.delimiter}
+      </p>
+      {!isMapComplete(draft.map) && (
+        <p className="text-red-700">{t(locale, 'import.incomplete')}</p>
+      )}
           <div className="overflow-x-auto">
             <table className="data">
               <caption className="text-left">{t(locale, 'import.preview')}</caption>
@@ -153,7 +69,7 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
               <label>
                 {t(locale, 'import.mode')}{' '}
                 <select
-                  className="rounded border"
+                  className="input"
                   value={draft.map.mode}
                   onChange={(event) => setMap({ mode: event.target.value as EdgeMode })}
                 >
@@ -179,7 +95,7 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
                   <label key={role} className="flex flex-col text-sm">
                     {t(locale, `role.${role}`)}
                     <select
-                      className="rounded border"
+                      className="input"
                       value={draft.map.columns[role] ?? ''}
                       onChange={(event) =>
                         setMap({
@@ -209,49 +125,7 @@ export function ImportPanel({ locale, storedMap, onImport }: Props) {
             <EdgeTable locale={locale} draft={draft} onChange={(edgeTable) => setMap({ edgeTable })} />
           )}
 
-          {parsed ? (
-            <>
-              <Materials
-                locale={locale}
-                parts={parsed.parts}
-                grainLock={grainLock}
-                onChange={setGrain}
-              />
-              <PartSelection
-                locale={locale}
-                parts={parsed.parts}
-                excluded={excluded}
-                onChange={setExcluded}
-                open
-              />
-              {parsed.skipped.length > 0 && (
-                <p>{t(locale, 'results.skipped', { n: parsed.skipped.length })}</p>
-              )}
-            </>
-          ) : (
-            <p className="text-red-700">{t(locale, 'import.incomplete')}</p>
-          )}
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="btn font-semibold"
-              disabled={!parsed || excluded.length === parsed.parts.length}
-              onClick={() => {
-                onImport({ ...parsed!, excluded, grainLock, map: draft.map });
-                setDraft(null);
-                setPaste('');
-              }}
-            >
-              {t(locale, 'import.confirm')}
-            </button>
-            <button type="button" className="btn" onClick={() => setDraft(null)}>
-              {t(locale, 'import.cancel')}
-            </button>
-          </div>
-        </div>
-      )}
-    </section>
+    </div>
   );
 }
 
@@ -271,7 +145,7 @@ function EdgeTable({
   const values = [...new Set(rows.map((row) => normalize(row[column] ?? '')))];
 
   return (
-    <table className="data self-start">
+    <table className="data">
       <caption className="text-left font-semibold">{t(locale, 'import.edgeTable')}</caption>
       <thead>
         <tr>

@@ -10,6 +10,7 @@ import { downloadCsv, downloadXlsx, toTsv } from './export';
 import { formatNumber, materialName } from './format';
 import { PrintPanel, PrintSheet, PRINT_SECTIONS, type PrintSection } from './Print';
 import { StripView } from './StripView';
+import { Tabs } from './Tabs';
 import { WhoDoesWhat } from './WhoDoesWhat';
 import { buildTable, type TableId } from './tables';
 
@@ -98,9 +99,9 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
 
   return (
     <>
-      <div className="flex flex-col gap-4 print:hidden">
+      <div className="card print:hidden">
         {skippedCount > 0 && (
-          <details className="rounded border border-amber-600 p-2">
+          <details className="rounded-lg bg-amber-50 p-3 text-amber-800">
             <summary>{t(locale, 'results.skipped', { n: skippedCount })}</summary>
             <ul className="text-sm">
               {skipped.map((row) => (
@@ -122,10 +123,10 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
         {!result.proven && <p className="text-amber-700">{t(locale, 'preview.notProven')}</p>}
 
         {pairable.length > 0 && (
-          <fieldset>
-            <legend className="font-semibold">{t(locale, 'preview.pair')}</legend>
+          <fieldset className="flex flex-col gap-1">
+            <legend className="mb-1 font-semibold">{t(locale, 'preview.pair')}</legend>
             {pairable.map(([key, [strip, ...others]]) => (
-              <label key={key} className="flex items-center gap-1">
+              <label key={key} className="check">
                 <input
                   type="checkbox"
                   checked={doubled[key] ?? false}
@@ -147,37 +148,29 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
 
         <PrintPanel locale={locale} selected={printed} onChange={setPrinted} />
 
-        <section>
-          <div role="tablist" className="flex gap-1 border-b">
-            {TABS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={tab === id}
-                className="rounded-t border border-b-0 px-3 py-1 aria-selected:bg-gray-200 aria-selected:font-semibold"
-                onClick={() => setTab(id)}
-              >
-                {t(locale, `tab.${id}`)}
-              </button>
-            ))}
-          </div>
-          <div role="tabpanel" className="py-2">
-            {tab === 'map' ? (
-              <>
-                {who()}
-                {boards()}
-              </>
-            ) : tab === 'strips' ? (
-              <>
-                {legend}
-                {strips()}
-              </>
-            ) : (
-              <TableTab key={tab} id={tab} locale={locale} settings={settings} result={result} />
-            )}
-          </div>
-        </section>
+        <Tabs
+          testId="results-panel"
+          active={tab}
+          onChange={setTab}
+          tabs={TABS.map((id) => ({
+            id,
+            label: t(locale, `tab.${id}`),
+            content: () =>
+              id === 'map' ? (
+                <>
+                  {who()}
+                  {boards()}
+                </>
+              ) : id === 'strips' ? (
+                <>
+                  {legend}
+                  {strips()}
+                </>
+              ) : (
+                <TableTab key={id} id={id} locale={locale} settings={settings} result={result} />
+              ),
+          }))}
+        />
       </div>
 
       <PrintSheet
@@ -209,7 +202,7 @@ function TableTab({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      {id === 'unbanded' && <p className="text-sm">{t(locale, 'unbanded.note')}</p>}
+      {id === 'unbanded' && <p className="muted">{t(locale, 'unbanded.note')}</p>}
       <div className="flex gap-2">
         <button
           type="button"

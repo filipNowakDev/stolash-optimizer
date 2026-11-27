@@ -9,7 +9,6 @@ interface Props {
   /** Indexes of the parts left out of the cut lists. */
   excluded: number[];
   onChange: (excluded: number[]) => void;
-  open?: boolean;
 }
 
 const COLUMNS: MessageId[] = [
@@ -17,25 +16,25 @@ const COLUMNS: MessageId[] = [
   'column.thickness', 'column.quantity', 'column.edges',
 ];
 
-export function PartSelection({ locale, parts, excluded, onChange, open }: Props) {
+export function PartSelection({ locale, parts, excluded, onChange }: Props) {
   const out = new Set(excluded);
   const mm = (value: number | null) => (value === null ? '' : formatNumber(locale, value));
 
   return (
-    <details open={open}>
-      <summary className="cursor-pointer font-semibold">
-        {t(locale, 'parts.title', { n: parts.length - out.size, total: parts.length })}
-      </summary>
-      <div className="flex gap-2 py-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="btn" onClick={() => onChange([])}>
           {t(locale, 'parts.all')}
         </button>
         <button type="button" className="btn" onClick={() => onChange(parts.map((_, i) => i))}>
           {t(locale, 'parts.none')}
         </button>
+        <span className="muted">
+          {t(locale, 'parts.title', { n: parts.length - out.size, total: parts.length })}
+        </span>
       </div>
       <div className="max-h-96 overflow-auto">
-        <table className="data">
+        <table className="data w-full">
           <thead>
             <tr>
               <th>{t(locale, 'parts.include')}</th>
@@ -46,7 +45,7 @@ export function PartSelection({ locale, parts, excluded, onChange, open }: Props
           </thead>
           <tbody>
             {parts.map((part, i) => (
-              <tr key={i} className={out.has(i) ? 'text-gray-400' : undefined}>
+              <tr key={i} className={out.has(i) ? 'text-slate-400' : undefined}>
                 <td>
                   <input
                     type="checkbox"
@@ -71,6 +70,6 @@ export function PartSelection({ locale, parts, excluded, onChange, open }: Props
           </tbody>
         </table>
       </div>
-    </details>
+    </div>
   );
 }
