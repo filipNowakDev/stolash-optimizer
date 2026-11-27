@@ -15,7 +15,12 @@ export type ReasonId =
 
 export type StripFlag = 'short' | 'narrow' | 'doubled' | 'acrossGrain' | 'trimTight';
 
+/** How parts are put on strips. Strips go on boards the same way for all. */
+export const ALGORITHMS = ['highs', 'optimized', 'ffd'] as const;
+export type Algorithm = (typeof ALGORITHMS)[number];
+
 export interface Settings {
+  algorithm: Algorithm;
   maxLength: number;
   maxWidth: number;
   sawKerf: number;

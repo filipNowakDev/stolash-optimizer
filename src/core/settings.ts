@@ -2,6 +2,7 @@ import type { Settings } from './types';
 
 // The only place factory numbers live (PRD section 8).
 export const FACTORY_SETTINGS: Readonly<Settings> = {
+  algorithm: 'highs',
   maxLength: 2760,
   maxWidth: 2030,
   sawKerf: 3.2,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Settings } from '../core/types';
+import { ALGORITHMS, type Algorithm, type Settings } from '../core/types';
 import { t, type Locale } from '../i18n';
 import { defaultEdgeLabel, formatNumber } from './format';
 import { parseInput, validate, type NumericField } from './validate';
@@ -39,6 +39,25 @@ export function SettingsPanel({ locale, group, settings, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      {group === 'optimisation' && (
+        <label className="field max-w-md">
+          {t(locale, 'settings.algorithm')}
+          <select
+            className="input"
+            value={settings.algorithm}
+            onChange={(event) =>
+              onChange({ ...settings, algorithm: event.target.value as Algorithm })
+            }
+          >
+            {ALGORITHMS.map((id) => (
+              <option key={id} value={id}>
+                {t(locale, `algorithm.${id}`)}
+              </option>
+            ))}
+          </select>
+          <span className="muted font-normal">{t(locale, `algorithm.${settings.algorithm}.hint`)}</span>
+        </label>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {fields.map((field) => {
           const text = draft(field, formatNumber(locale, settings[field]));
@@ -90,6 +109,8 @@ export function SettingsPanel({ locale, group, settings, onChange }: Props) {
         <label key={toggle} className="check">
           <input
             type="checkbox"
+            // First Fit Decreasing never moves parts between widths.
+            disabled={toggle === 'fitNarrower' && settings.algorithm === 'ffd'}
             checked={settings[toggle]}
             onChange={(event) => onChange({ ...settings, [toggle]: event.target.checked })}
           />

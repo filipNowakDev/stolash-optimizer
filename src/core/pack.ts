@@ -28,7 +28,12 @@ export function groupKey(c: Candidate): string {
 const um = (mm: number) => Math.round(mm * 1000);
 
 /** PRD section 13. */
-export function pack(candidates: Candidate[], settings: Settings): PackResult {
+export function pack(
+  candidates: Candidate[],
+  settings: Settings,
+  /** 0 stops at First Fit Decreasing. */
+  searchBudget?: number,
+): PackResult {
   const { sawKerf, trimAllowance, shortStrips, shortStripRatio, minStripWidth } = settings;
   const kerf = um(sawKerf);
   const result: PackResult = { strips: [], exceptions: [], proven: true };
@@ -96,6 +101,7 @@ export function pack(candidates: Candidate[], settings: Settings): PackResult {
       regular.map((p) => um(p.length) + kerf),
       usable + kerf,
       (load) => orderUm(load - kerf),
+      searchBudget,
     );
     result.proven &&= packed.proven;
     const bins = packed.bins.map((bin) => bin.map((i) => regular[i]!));
