@@ -159,6 +159,11 @@ export const en = {
   'solver.failed': 'The HiGHS solver was not available, so these results come from the optimizer without it.',
   'solver.bound': 'Strip area ordered: {area} m². No choice of strips can order less than {bound} m². This says nothing about boards or cuts.',
 
+  'banding.total': 'Edge banding',
+  'banding.product': '{name}: {total} m (on strips {strips} m, on whole elements {whole} m)',
+  'banding.note': 'Net length of the ordered edges. No allowance for trimming or waste is added.',
+  'versions.banding': 'Banding, m',
+
   'tab.order': 'Strip order',
   'tab.finished': 'Finished parts',
   'tab.unbanded': 'No banding',

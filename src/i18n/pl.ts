@@ -161,6 +161,11 @@ export const pl: Record<MessageId, string> = {
   'solver.failed': 'Solver HiGHS był niedostępny, więc te wyniki pochodzą z optymalizatora bez niego.',
   'solver.bound': 'Zamawiana powierzchnia pasów: {area} m². Żaden dobór pasów nie może zamówić mniej niż {bound} m². Nie dotyczy to płyt ani cięć.',
 
+  'banding.total': 'Okleina',
+  'banding.product': '{name}: {total} m (na pasach {strips} m, na gotowych elementach {whole} m)',
+  'banding.note': 'Długość netto zamawianych krawędzi. Bez naddatku na przycinanie i odpad.',
+  'versions.banding': 'Okleina, m',
+
   'tab.order': 'Zamówienie pasów',
   'tab.finished': 'Gotowe formatki',
   'tab.unbanded': 'Bez okleiny',

@@ -7,6 +7,7 @@ const COLUMNS: { id: MessageId; value: (r: Result) => number; text: (l: Locale, 
   { id: 'versions.boards', best: 'min', value: (r) => r.metrics.boards, text: (_, r) => String(r.metrics.boards) },
   { id: 'versions.cuts', best: 'min', value: (r) => r.metrics.cutLength, text: (l, r) => formatNumber(l, r.metrics.cutLength / 1000, 2) },
   { id: 'versions.ownCuts', best: 'min', value: (r) => r.metrics.ownLength, text: (l, r) => formatNumber(l, r.metrics.ownLength / 1000, 2) },
+  { id: 'versions.banding', best: 'min', value: (r) => r.metrics.banding, text: (l, r) => formatNumber(l, r.metrics.banding / 1000, 2) },
   { id: 'versions.waste', best: 'min', value: (r) => r.metrics.waste, text: (l, r) => formatNumber(l, r.metrics.waste / 1e6, 2) },
   { id: 'versions.reusable', best: 'max', value: (r) => r.metrics.reusable, text: (l, r) => formatNumber(l, r.metrics.reusable / 1e6, 2) },
   {
