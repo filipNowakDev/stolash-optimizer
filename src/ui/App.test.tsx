@@ -124,5 +124,9 @@ describe('App', () => {
     expect(sheet().textContent).toContain('strips: 19, whole elements: 4');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Board drawings' }));
     expect(sheet().querySelectorAll('section')).toHaveLength(5);
+
+    expect(sheet().classList.contains('mono')).toBe(false);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Black and white' }));
+    expect(sheet().classList.contains('mono')).toBe(true);
   });
 });

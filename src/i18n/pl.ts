@@ -146,6 +146,10 @@ export const pl: Record<MessageId, string> = {
   'import.delimiter': 'Separator',
   'import.clipboard': 'schowek',
   'import.tab': 'tabulator',
+  'print.mono': 'Czarno-biały',
+  'who.legendOrderedMono': 'gruba linia ciągła: zamawiane w hurtowni',
+  'who.legendCutMono': 'linia przerywana: Twoje cięcie',
+
   'tab.order': 'Zamówienie pasów',
   'tab.finished': 'Gotowe formatki',
   'tab.unbanded': 'Bez okleiny',

@@ -14,13 +14,13 @@ export function Banding({ length, y }: { length: number; y: number }) {
 /** A cut made in the shop. Dashed, so it survives black and white printing. */
 export function OwnCut({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
   return (
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#dc2626" strokeWidth="14" strokeDasharray="36 22" />
+    <line className="own-cut" x1={x1} y1={y1} x2={x2} y2={y2} stroke="#dc2626" strokeWidth="14" strokeDasharray="36 22" />
   );
 }
 
 /** The outline of what the wholesaler delivers. */
 export function Ordered({ y = 0, length, height }: { y?: number; length: number; height: number }) {
-  return <rect y={y} width={length} height={height} fill="none" stroke="#1d4ed8" strokeWidth="14" />;
+  return <rect className="ordered" y={y} width={length} height={height} fill="none" stroke="#1d4ed8" strokeWidth="14" />;
 }
 
 /** Where the shop crosscuts a strip of the given order length. */
@@ -33,7 +33,7 @@ export function Hatch({ id }: { id: string }) {
   return (
     <pattern id={id} width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="30" height="30" fill="#fff" />
-      <line y2="30" stroke="#9ca3af" strokeWidth="4" />
+      <line className="hatch" y2="30" stroke="#9ca3af" strokeWidth="4" />
     </pattern>
   );
 }
@@ -59,7 +59,7 @@ export function Piece({ x, y = 0, length, height, name, lengthText, widthText, b
   return (
     <svg x={x} y={y} width={length} height={height}>
       <title>{`${name} ${lengthText} × ${widthText}`.trim()}</title>
-      <rect width="100%" height="100%" fill={banded ? '#d9ead3' : '#d6deef'} stroke="#111827" strokeWidth="5" />
+      <rect className="piece" width="100%" height="100%" fill={banded ? '#d9ead3' : '#d6deef'} stroke="#111827" strokeWidth="5" />
       {banded > 0 && <Banding length={length} y={height - 14} />}
       {banded === 2 && <Banding length={length} y={14} />}
       {/* Below this the text is unreadable; the title and piece list still have it. */}
