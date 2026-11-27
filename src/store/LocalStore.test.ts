@@ -10,16 +10,20 @@ describe('LocalStore', () => {
     expect(localStorage.getItem(STORAGE_KEYS.settings)).not.toBeNull();
   });
 
-  it('clearSession keeps settings and language', async () => {
+  it('keeps settings and language across visits', async () => {
     const store = new LocalStore(localStorage);
     await store.saveSettings({ ...FACTORY_SETTINGS, sawKerf: 4 });
     await store.saveLocale('pl');
-    await store.saveSession({ parts: [], skipped: [], excluded: [], grainLock: {}, doubledGroups: {}, timestamp: 1 });
 
-    await store.clearSession();
+    const next = new LocalStore(localStorage);
 
-    expect(store.loadSession()).toBeNull();
-    expect(store.loadSettings().sawKerf).toBe(4);
-    expect(store.loadLocale()).toBe('pl');
+    expect(next.loadSettings().sawKerf).toBe(4);
+    expect(next.loadLocale()).toBe('pl');
+  });
+
+  it('deletes the job an earlier release had saved', () => {
+    localStorage.setItem('stolash.session.v1', '{"parts":[]}');
+    new LocalStore(localStorage);
+    expect(localStorage.getItem('stolash.session.v1')).toBeNull();
   });
 });
