@@ -21,10 +21,14 @@ export function PrintPanel({
   locale,
   selected,
   onChange,
+  mono,
+  onMonoChange,
 }: {
   locale: Locale;
   selected: PrintSection[];
   onChange: (selected: PrintSection[]) => void;
+  mono: boolean;
+  onMonoChange: (mono: boolean) => void;
 }) {
   return (
     <fieldset className="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 p-3">
@@ -45,6 +49,14 @@ export function PrintPanel({
           {t(locale, LABELS[id])}
         </label>
       ))}
+      <label className="check border-l border-slate-300 pl-4 font-medium">
+        <input
+          type="checkbox"
+          checked={mono}
+          onChange={(event) => onMonoChange(event.target.checked)}
+        />
+        {t(locale, 'print.mono')}
+      </label>
       <button
         type="button"
         className="btn btn-primary ml-auto"
@@ -63,6 +75,7 @@ export function PrintSheet({
   settings,
   result,
   selected,
+  mono,
   who,
   boards,
   strips,
@@ -71,12 +84,17 @@ export function PrintSheet({
   settings: Settings;
   result: Result;
   selected: PrintSection[];
+  mono: boolean;
   who: () => ReactNode;
   boards: (heading: ReactNode) => ReactNode;
   strips: (heading: ReactNode) => ReactNode;
 }) {
   return (
-    <div className="hidden print:block" aria-hidden="true" data-testid="print-sheet">
+    <div
+      className={`hidden print:block ${mono ? 'mono' : ''}`}
+      aria-hidden="true"
+      data-testid="print-sheet"
+    >
       {selected.map((id) => {
         const heading = <h2 className="text-lg font-semibold">{t(locale, LABELS[id])}</h2>;
         // Drawing sections span pages; they keep their heading with the first drawing.

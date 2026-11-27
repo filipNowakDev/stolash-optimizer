@@ -79,7 +79,7 @@ function ElementDrawing({ part, longest }: { part: Part; longest: number }) {
   const size = Math.max(length, width, longest / 4);
   return (
     <svg viewBox={`-20 -20 ${size + 40} ${width + 40}`} width="100%">
-      <rect width={length} height={width} fill="#fce5cd" stroke="#111827" strokeWidth="8" />
+      <rect className="piece" width={length} height={width} fill="#fce5cd" stroke="#111827" strokeWidth="8" />
       {edges.left && <Banding length={length} y={width - 20} />}
       {edges.right && <Banding length={length} y={20} />}
       {edges.top && (

@@ -61,6 +61,44 @@
   }
 }
 
+/* Black and white printing: no tints, so lines are told apart by weight and dashes. */
+.mono-only {
+  display: none;
+}
+.mono .mono-only {
+  display: inline;
+}
+.mono .color-only {
+  display: none;
+}
+.mono,
+.mono * {
+  color: #000 !important;
+  background: transparent !important;
+  border-color: #000 !important;
+}
+.mono svg text {
+  fill: #000;
+}
+.mono .piece {
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 3;
+}
+.mono .hatch {
+  stroke: #000;
+  stroke-width: 2;
+}
+.mono .ordered {
+  stroke: #000;
+  stroke-width: 18;
+}
+.mono .own-cut {
+  stroke: #000;
+  stroke-width: 12;
+  stroke-dasharray: 48 36;
+}
+
 @page {
   size: A4 portrait;
   margin: 10mm;

@@ -144,6 +144,10 @@ export const en = {
   'import.delimiter': 'Delimiter',
   'import.clipboard': 'clipboard',
   'import.tab': 'tab',
+  'print.mono': 'Black and white',
+  'who.legendOrderedMono': 'thick solid line: ordered from the wholesaler',
+  'who.legendCutMono': 'dashed line: your cut',
+
   'tab.order': 'Strip order',
   'tab.finished': 'Finished parts',
   'tab.unbanded': 'No banding',

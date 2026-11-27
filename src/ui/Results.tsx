@@ -29,6 +29,7 @@ interface Props {
 export function Results({ locale, settings, result, skipped, doubled, onDoubledChange }: Props) {
   const [tab, setTab] = useState<Tab>('order');
   const [printed, setPrinted] = useState<PrintSection[]>([...PRINT_SECTIONS]);
+  const [mono, setMono] = useState(false);
   // Strip width can only be non-positive after classification, so it is listed here too.
   const tooThin = result.exceptions.filter((e) => e.reason === 'nonPositiveWidth');
   const skippedCount = skipped.length + tooThin.length;
@@ -51,11 +52,13 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
       </span>
       <span>
         <span aria-hidden="true" className="font-bold text-blue-700">━━ </span>
-        {t(locale, 'who.legendOrdered')}
+        <span className="color-only">{t(locale, 'who.legendOrdered')}</span>
+        <span className="mono-only">{t(locale, 'who.legendOrderedMono')}</span>
       </span>
       <span>
         <span aria-hidden="true" className="font-bold text-red-600">╍╍ </span>
-        {t(locale, 'who.legendCut')}
+        <span className="color-only">{t(locale, 'who.legendCut')}</span>
+        <span className="mono-only">{t(locale, 'who.legendCutMono')}</span>
       </span>
     </p>
   );
@@ -162,7 +165,13 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
           </fieldset>
         )}
 
-        <PrintPanel locale={locale} selected={printed} onChange={setPrinted} />
+        <PrintPanel
+          locale={locale}
+          selected={printed}
+          onChange={setPrinted}
+          mono={mono}
+          onMonoChange={setMono}
+        />
 
         <Tabs
           testId="results-panel"
@@ -191,6 +200,7 @@ export function Results({ locale, settings, result, skipped, doubled, onDoubledC
         settings={settings}
         result={result}
         selected={printed}
+        mono={mono}
         who={who}
         boards={boards}
         strips={strips}
