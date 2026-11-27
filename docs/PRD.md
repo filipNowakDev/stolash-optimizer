@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 1.4 |
+| Document version | 1.5 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -403,15 +403,20 @@ For each group:
 1. Sort pieces by strip length descending. Ties break by name, then by stable input order.
 2. A piece longer than `maxLength` is not packed. It becomes exception `longerThanBoard`.
 3. A piece longer than `L_eff` and within `maxLength` gets its own full-length strip and flag `trimTight`. Nothing else is added to it.
-4. Remaining pieces use First Fit Decreasing. A piece enters the first strip where
+4. The remaining pieces are packed optimally (branch and bound). A strip holds its pieces when
 
 ```
-used + pieceLength + (strip already has a piece ? sawKerf : 0) ≤ L_eff
+sum of piece lengths + sawKerf * (pieces - 1) ≤ L_eff
 ```
 
 Kerf sits between pieces, not after the last one.
 
-5. If no strip can take it, a new strip opens.
+5. Layouts are ranked in this order:
+   1. fewest strips,
+   2. shortest total order length (see below),
+   3. fullest strips first, which leaves the largest single leftover.
+
+6. The search starts from First Fit Decreasing and stops after a fixed number of steps, never after a time limit. A group too large to finish keeps the best layout found, which is never worse than First Fit Decreasing, and the screen says it is not proven optimal.
 
 Order length:
 
@@ -511,7 +516,8 @@ Layout:
 - `src/i18n/` — `en` and `pl` dictionaries and `t(locale, id)`
 - `src/core/parse.ts` — decoding, delimiter, PapaParse, mapping
 - `src/core/classify.ts` — classification and dimensions
-- `src/core/pack.ts` — FFD and double strips
+- `src/core/pack.ts`, `binpack.ts` — optimal packing
+- `src/core/order.ts` — double strips and order rows
 - `src/store/` — `ProjectStore` (section 16)
 - `src/ui/` — React components, events, SVG, export, print, menu
 
@@ -562,7 +568,7 @@ Until that phase the repo has no Supabase client, no environment variables, and 
 
 Dimensions include the edge. Thickness 0.8 mm. `maxLength` 2760. `trimAllowance` 10. `sawKerf` 3.2. `L_eff` 2750. Short-strip threshold 0.40. Grain lock on. One edge product "PCV 0,8 biały" on the length edge, unless the scenario says otherwise.
 
-1. Pieces 2100, 720, 720, and 564 of the same width produce two strips. The first holds only 2100 (`used` 2100 ≤ 2750; adding 720 plus kerf reaches 2823.2). The second holds 720 + 3.2 + 720 + 3.2 + 564 = 2010.4. Both are ordered at 2760, because 2010.4 / 2750 ≥ 0.40. Order width = part width − 0.8.
+1. Pieces 2100, 720, 720, and 564 of the same width produce two strips. The first holds 2100 + 3.2 + 564 = 2667.2. The second holds 720 + 3.2 + 720 = 1443.2. Both are ordered at 2760, because 1443.2 / 2750 ≥ 0.40. Order width = part width − 0.8.
 2. A single 800 mm piece produces one strip flagged `short`, ordered at 810.
 3. A 2800 mm piece becomes `longerThanBoard`. It is absent from the strip order.
 4. A side banded on the 720 length, width 560, is a strip with piece length 720. The same part banded on both length edges (left and right) is L1+L2 with `boardWidth` = 560 − 1.6. Banding on the length and the width is `adjacentEdges`. Banding on three or four edges is `finishedPart`. No banding goes to "No banding" and creates no strip.

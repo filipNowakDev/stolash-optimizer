@@ -3,7 +3,7 @@
 Turns a PRO100 v5 formatka list into a strip order, a finished-parts list and a cut map.
 Runs entirely in the browser. Specification: [docs/PRD.md](docs/PRD.md).
 
-**Status:** project skeleton. Parsing, classification and packing are not implemented yet.
+**Status:** v1 features implemented. Not yet checked against real PRO100 sample files.
 
 ## Setup
 
@@ -28,7 +28,7 @@ yarn install
 
 | Path | Contents |
 |---|---|
-| `src/core` | Domain types, settings, parse, classify, pack |
+| `src/core` | Pure logic: parse, classify, pack, order rows |
 | `src/i18n` | English and Polish strings |
 | `src/store` | `ProjectStore` and its `localStorage` implementation |
 | `src/ui` | React components |

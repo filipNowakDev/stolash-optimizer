@@ -15,7 +15,8 @@ export class LocalStore implements ProjectStore {
 
   loadSettings(): Settings {
     const stored = this.read<Settings>(STORAGE_KEYS.settings);
-    if (stored) return stored;
+    // Spread over the factory values so a field added later is never undefined.
+    if (stored) return { ...FACTORY_SETTINGS, ...stored };
     const factory = { ...FACTORY_SETTINGS };
     void this.saveSettings(factory);
     return factory;
@@ -25,8 +26,8 @@ export class LocalStore implements ProjectStore {
     this.write(STORAGE_KEYS.settings, settings);
   }
 
-  loadColumnMap(): ColumnMap {
-    return this.read<ColumnMap>(STORAGE_KEYS.columnMap) ?? {};
+  loadColumnMap(): ColumnMap | null {
+    return this.read<ColumnMap>(STORAGE_KEYS.columnMap);
   }
 
   async saveColumnMap(map: ColumnMap): Promise<void> {

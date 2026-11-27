@@ -1,1 +1,22 @@
 @import 'tailwindcss';
+
+@layer components {
+  .btn {
+    @apply cursor-pointer rounded border bg-gray-50 px-3 py-1 hover:bg-gray-100 disabled:cursor-default disabled:opacity-50;
+  }
+  .data td,
+  .data th {
+    @apply border px-2 py-1 text-left text-sm;
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  * {
+    print-color-adjust: exact;
+  }
+}
