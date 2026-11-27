@@ -145,9 +145,9 @@ describe('acceptance', () => {
     ]);
   });
 
-  it('puts a wieniec on an ordinary strip once its texture is rotated in PRO100', () => {
+  it('puts a width-banded part on an ordinary strip once its texture is rotated in PRO100', () => {
     // PRO100 then swaps the columns, so the band moves to the length.
-    const { parts } = load('Wieniec\t1024\t—\t600\t   \t18\t2\t');
+    const { parts } = load('Part\t1024\t—\t600\t   \t18\t2\t');
     expect(run(parts).strips[0]).toMatchObject({
       crossCut: false,
       orderLength: 2760,
@@ -233,7 +233,7 @@ describe('acceptance', () => {
   });
 
   it('shares strips between length- and width-banded parts when grain does not matter', () => {
-    const shelves = part(600, ['top'], { name: 'polki', width: 436, quantity: 2 });
+    const shelves = part(600, ['top'], { name: 'shelf', width: 436, quantity: 2 });
     const parts = [
       shelves,
       part(1720, ['left'], { width: 600 }),
@@ -247,7 +247,7 @@ describe('acceptance', () => {
     expect(run(parts).strips.filter((s) => s.crossCut)).toHaveLength(1);
   });
 
-  it('12: produces the expected result for the gospodarcze file', () => {
+  it('12: produces the expected result for the sample file', () => {
     const { parts } = load(FORMATEK_CSV);
     const grain = Object.fromEntries(parts.map((p) => [p.material, true]));
     const result = run(parts, grain);
@@ -264,12 +264,12 @@ describe('acceptance', () => {
       [1, 25, 15, 1264, undefined],
     ]);
     expect(result.rows.slice(2, 4).map((r) => r.flags)).toEqual([['acrossGrain'], ['acrossGrain']]);
-    const reasons = result.exceptions.map((e) => [e.part.name.split(' ')[0], e.reason]);
+    const reasons = result.exceptions.map((e) => [e.part.name.split(' ')[1], e.reason]);
     expect(reasons).toEqual([
-      ['Drzwi', 'finishedPart'],
-      ['Drzwi', 'finishedPart'],
+      ['D', 'finishedPart'],
+      ['D', 'finishedPart'],
     ]);
-    expect(result.unbanded.map((p) => p.name)).toEqual(['', '', '', 'koło', 'koło']);
+    expect(result.unbanded.map((p) => p.name)).toEqual(['', '', '', 'Przykład E', 'Przykład E']);
   });
 
   it('suggests grain from the material name', () => {

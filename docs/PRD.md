@@ -5,7 +5,7 @@
 | Status | Ready to implement (v1) |
 | Product | Static workshop app, GitHub Pages |
 | UI languages | English and Polish, switchable |
-| Document version | 3.1 |
+| Document version | 3.2 |
 | v1 scope | 100% in the browser, no backend |
 | Later | Accounts, cloud storage, Supabase |
 
@@ -208,7 +208,7 @@ Parsing numbers does not follow the UI locale. It follows the file delimiter, be
 
 ### Confirmed profile: Lista formatek
 
-Source checked against `gospodarcze - lista formatek.csv` and the matching `.txt` from PRO100 v5 (report **Lista formatek**, button Zapisz / the copy buffer). The on-screen grid draws the edge mark inside the dimension cell. The file stores that mark as the next column.
+Source checked against a sample `lista formatek` CSV and the matching `.txt` from PRO100 v5 (report **Lista formatek**, button Zapisz / the copy buffer). The on-screen grid draws the edge mark inside the dimension cell. The file stores that mark as the next column.
 
 Both files are Windows-1250, CRLF, and have **no header row**.
 
@@ -221,7 +221,7 @@ Eight columns, in this order:
 
 | Index | Role | Example |
 |---|---|---|
-| 1 | Part name | `Boki szafy po lewej`. May be empty |
+| 1 | Part name | `Przykład A`. May be empty |
 | 2 | Length, mm | `2390` |
 | 3 | Length edge mark | three spaces, `—`, or `=` |
 | 4 | Width, mm | `600` |
@@ -253,22 +253,22 @@ Decoded rows from the checked file:
 | | 300 | | 650 | | 18 | 2 | |
 | | 282 | | 614 | | 18 | 5 | |
 | | 2354 | | 282 | | 18 | 2 | |
-| Wieńce szafy po lewej | 600 | | 1024 | one | 18 | 2 | |
-| Półki szafy po lewej | 590 | | 1024 | one | 18 | 3 | |
-| Boki szafy po lewej | 2390 | one | 600 | | 18 | 4 | |
-| Drzwi Szafy | 2388 | both | 528 | both | 18 | 2 | |
-| koło | 15 | | 15 | | 1024 | 1 | Inne\lustro srebrne |
-| Wieńce szafy po lewej | 600 | | 1264 | one | 18 | 2 | |
-| Półki szafy po lewej | 590 | | 1264 | one | 18 | 3 | |
-| Drzwi Szafy | 2388 | both | 648 | both | 18 | 2 | |
-| koło | 15 | | 15 | | 1264 | 1 | Inne\lustro srebrne |
+| Przykład B | 600 | | 1024 | one | 18 | 2 | |
+| Przykład C | 590 | | 1024 | one | 18 | 3 | |
+| Przykład A | 2390 | one | 600 | | 18 | 4 | |
+| Przykład D | 2388 | both | 528 | both | 18 | 2 | |
+| Przykład E | 15 | | 15 | | 1024 | 1 | Inne\lustro srebrne |
+| Przykład B | 600 | | 1264 | one | 18 | 2 | |
+| Przykład C | 590 | | 1264 | one | 18 | 3 | |
+| Przykład D | 2388 | both | 648 | both | 18 | 2 | |
+| Przykład E | 15 | | 15 | | 1264 | 1 | Inne\lustro srebrne |
 
 With grain lock on for the blank material and the default settings, that file classifies as:
 
-- **Boki szafy po lewej** — L1. Piece length 2390, `boardWidth` 600, thickness 18, quantity 4. Each piece occupies its own strip (`2390 + 3.2 + 2390 > 2750`). Fill 2390 / 2750 ≥ 0.40, so four order rows of 2760 × 600, or one aggregated row with quantity 4.
-- **Wieńce** and **Półki** — the only band is on the width, across the grain, so they go on `acrossGrain` strips ripped across the board: piece length is the width column (1024 or 1264), `boardWidth` is the length column (600 for wieńce, 590 for półki), strip length at most 2030.
-- **Drzwi Szafy** — exception `finishedPart` (four edges).
-- Unnamed rows and **koło** — unbanded strips, also listed in "No banding". v1 does not treat `koło` as a circle; it is a 15 × 15 row with no marks.
+- **Przykład A** — L1. Piece length 2390, `boardWidth` 600, thickness 18, quantity 4. Each piece occupies its own strip (`2390 + 3.2 + 2390 > 2750`). Fill 2390 / 2750 ≥ 0.40, so four order rows of 2760 × 600, or one aggregated row with quantity 4.
+- **Przykład B** and **Przykład C** — the only band is on the width, across the grain, so they go on `acrossGrain` strips ripped across the board: piece length is the width column (1024 or 1264), `boardWidth` is the length column (600 for Przykład B, 590 for Przykład C), strip length at most 2030.
+- **Przykład D** — exception `finishedPart` (four edges).
+- Unnamed rows and **Przykład E** — unbanded strips, also listed in "No banding". It is a 15 × 15 row with no marks.
 
 Turning grain lock off for the blank material keeps the same pieces and widths on ordinary 2760 strips, shared with other parts of that width. Strips are grouped by `boardWidth`, so both cabinets share a group.
 
@@ -630,12 +630,12 @@ Until that phase the repo has no Supabase client, no environment variables, and 
 4. A side banded on the 720 length, width 560, is a strip with piece length 720. The same part banded on both length edges (left and right) is L1+L2 with `boardWidth` = 560. Banding on the length and the width is `adjacentEdges`. Banding on three or four edges is `finishedPart`. No banding goes to "No banding" and onto an unbanded strip.
 5. Banding only on the top or bottom forms a strip whose piece length equals the file width, With grain lock on it is flagged `acrossGrain`, ordered at most 2030 long, and a piece over 2030 is `longerThanBoard`. With grain lock off it is an ordinary strip, up to 2760 long.
 6. Two widths, two materials, two board thicknesses, or two edge labels do not share a strip.
-7. `gospodarcze - lista formatek.csv` decodes as Windows-1250, shows `Wieńce`, `Półki`, and `koło` correctly, and is recognized as the Lista formatek profile with no header. The tab TXT of the same report parses to the same 12 rows. A bad quantity is on the skipped list, and the other rows still produce a result.
+7. The sample `lista formatek` CSV decodes as Windows-1250, shows names with Polish characters correctly, and is recognized as the Lista formatek profile with no header. The tab TXT of the same report parses to the same 12 rows. A bad quantity is on the skipped list, and the other rows still produce a result.
 8. A 50 mm strip width is flagged `narrow`. After pairing, two full strips become one row of width 50 + 50 + 3.2 = 103.2 with L1 and L2. A third full strip stays single.
 9. Reload restores parameters, the column map, the last session, and the language. "Clear session" removes the result and keeps parameters and language. The browser network log shows no request carrying the CSV body.
 10. The Polish CSV opens in Excel with Polish characters, semicolons, and comma decimals. The English CSV uses comma delimiters and dot decimals. The printed cut map has no import zone.
 11. On a fresh profile with an English browser language, the UI is English. Choosing **Polski** in the header menu switches every chrome string, tab, remark, and export header without changing strip counts or ordered millimeters. Reload keeps Polish. Imported material names stay as they were in the file. The same coverage holds in the other direction.
-12. On the gospodarcze Lista formatek file, with grain lock left on and `subtractEdge` off: the only banded strip order is quantity 4 of 2760 × 600 × 18, L1 set to the default edge label, material blank. The unbanded strip orders, with L1 and L2 empty, are 1 of 2760 × 650 (the five 614-wide parts are ripped from it), 2 of 2760 × 282, and 1 of 25 × 15 for each `koło` row. Wieńce and półki give `acrossGrain` orders of 4 × 2030 × 600 and 6 × 2030 × 590. Both door rows are `finishedPart`. The unnamed rows and both `koło` rows are listed as unbanded.
+12. On the sample Lista formatek file, with grain lock left on and `subtractEdge` off: the only banded strip order is quantity 4 of 2760 × 600 × 18, L1 set to the default edge label, material blank. The unbanded strip orders, with L1 and L2 empty, are 1 of 2760 × 650 (the five 614-wide parts are ripped from it), 2 of 2760 × 282, and 1 of 25 × 15 for each `Przykład E` row. Przykład B and C give `acrossGrain` orders of 4 × 2030 × 600 and 6 × 2030 × 590. Both door rows are `finishedPart`. The unnamed rows and both `Przykład E` rows are listed as unbanded.
 
 ## 18. Open questions
 
